@@ -28,7 +28,8 @@
             ]
           }
         ]
-      }
+      },
+      "trigger": "minecraft:inventory_changed"
     },
     "has_electirizer": {
       "conditions": {
