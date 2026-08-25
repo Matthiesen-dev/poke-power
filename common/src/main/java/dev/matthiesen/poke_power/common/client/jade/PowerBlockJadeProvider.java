@@ -19,13 +19,15 @@ import snownee.jade.api.ui.IElementHelper;
 public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
     INSTANCE;
 
+    private static final String POKE_PROPERTY_PREFIX = "poke_property_";
+
     @Override
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         var serverData = blockAccessor.getServerData();
         var registryAccess = blockAccessor.getLevel().registryAccess();
         int index = 0;
-        while (serverData.contains("poke_property_" + index, Tag.TAG_COMPOUND)) {
-            var itemTag = serverData.getCompound("poke_property_" + index);
+        while (serverData.contains(POKE_PROPERTY_PREFIX + index, Tag.TAG_COMPOUND)) {
+            var itemTag = serverData.getCompound(POKE_PROPERTY_PREFIX + index);
             ItemStack item = ItemStack.parseOptional(registryAccess, itemTag);
             if (!item.isEmpty()) {
                 IElementHelper elements = IElementHelper.get();
@@ -45,7 +47,7 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
             for (int i = 0; i < pokemonList.size(); i++) {
                 ItemStack item = new PokeUtil(pokemonList.get(i)).toItem();
                 Tag itemTag = item.save(serverLevel.registryAccess());
-                compoundTag.put("poke_property_" + i, itemTag);
+                compoundTag.put(POKE_PROPERTY_PREFIX + i, itemTag);
             }
         }
     }
