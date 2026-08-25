@@ -3,6 +3,7 @@ package dev.matthiesen.poke_power.common.block.entity;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.types.ElementalTypes;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
+import com.cobblemon.mod.common.pokemon.OriginalTrainerType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
@@ -34,7 +35,9 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements GeoBlockEntity {
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin()
@@ -48,38 +51,58 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     private final PokeEnergyGenerator generator = new PokeEnergyGenerator(120000L, 16000L);
 
     private boolean isActive = false;
-    // Mutable list - never wrap in unmodifiableList so insertPokemon/takePokemon work correctly
-    private List<Pokemon> storedPokemon = new ArrayList<>();
+    private List<StoredPokemon> storedPokemon = new ArrayList<>();
 
-    public boolean insertPokemon(Pokemon pokemon) {
+    public boolean insertPokemon(Pokemon pokemon, UUID ownerUuid) {
         if (storedPokemon.size() >= 6) return false;
         if (!pokemon.getPrimaryType().equals(ElementalTypes.ELECTRIC)) return false;
-        storedPokemon.add(pokemon);
+        storedPokemon.add(new StoredPokemon(pokemon, ownerUuid));
         return true;
     }
 
     public long getActiveGenerationValue() {
         if (!isActive) return 0;
         long totalGeneration = 0;
-        for (Pokemon pokemon : storedPokemon) {
-            totalGeneration += (long) pokemon.getLevel() * PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
+        for (StoredPokemon stored : storedPokemon) {
+            totalGeneration += (long) stored.pokemon().getLevel() * PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
         }
         return totalGeneration;
     }
 
     public List<Pokemon> getStoredPokemon() {
-        return Collections.unmodifiableList(storedPokemon);
+        List<Pokemon> pokemon = new ArrayList<>(storedPokemon.size());
+        for (StoredPokemon stored : storedPokemon) {
+            pokemon.add(stored.pokemon());
+        }
+        return Collections.unmodifiableList(pokemon);
     }
 
-    public boolean takePokemon(Pokemon pokemon) {
-        return storedPokemon.remove(pokemon);
+    public boolean returnPokemonToOwner(int index) {
+        if (level == null || index < 0 || index >= storedPokemon.size()) return false;
+
+        StoredPokemon stored = storedPokemon.get(index);
+        if (stored.ownerUuid() == null) return false;
+
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(stored.ownerUuid(), level.registryAccess());
+        if (!party.add(stored.pokemon())) return false;
+
+        storedPokemon.remove(index);
+        return true;
+    }
+
+    public void returnStoredPokemonToOwners() {
+        if (level == null || level.isClientSide) return;
+
+        for (int i = storedPokemon.size() - 1; i >= 0; i--) {
+            returnPokemonToOwner(i);
+        }
     }
 
     /** Builds the sync payload sent to the client when the generator menu is opened or updated. */
     public SyncGeneratorPayload buildSyncPacket(ServerPlayer player, int containerId) {
         List<ItemStack> genItems = new ArrayList<>();
-        for (Pokemon pokemon : storedPokemon) {
-            genItems.add(new PokeUtil(pokemon).toItem());
+        for (StoredPokemon stored : storedPokemon) {
+            genItems.add(new PokeUtil(stored.pokemon()).toItem());
         }
         while (genItems.size() < 6) genItems.add(ItemStack.EMPTY);
 
@@ -118,15 +141,18 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         CompoundTag nbt = compoundTag.getCompound("poke_power");
         this.isActive = nbt.getBoolean("isActive");
         CompoundTag pokemonList = nbt.getCompound("storedPokemon");
-        // Use a mutable list and use provider (always a RegistryAccess at runtime)
-        List<Pokemon> loaded = new ArrayList<>();
-        for (String key : pokemonList.getAllKeys()) {
-            CompoundTag pokemonTag = pokemonList.getCompound(key);
+        List<StoredPokemon> loadedStoredPokemon = new ArrayList<>();
+        List<String> keys = new ArrayList<>(pokemonList.getAllKeys());
+        keys.sort(Comparator.comparingInt(PowerBlockEntity::storedPokemonIndex));
+        for (String key : keys) {
+            CompoundTag entryTag = pokemonList.getCompound(key);
+            CompoundTag pokemonTag = entryTag.contains("pokemon") ? entryTag.getCompound("pokemon") : entryTag;
             Pokemon pokemon = new Pokemon();
             pokemon.loadFromNBT((RegistryAccess) provider, pokemonTag);
-            loaded.add(pokemon);
+            UUID ownerUuid = entryTag.hasUUID("owner") ? entryTag.getUUID("owner") : getOwnerUuid(pokemon);
+            loadedStoredPokemon.add(new StoredPokemon(pokemon, ownerUuid));
         }
-        this.storedPokemon = loaded;
+        this.storedPokemon = loadedStoredPokemon;
     }
 
     @Override
@@ -136,9 +162,14 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         nbt.putBoolean("isActive", this.isActive);
         CompoundTag pokemonList = new CompoundTag();
         for (int i = 0; i < storedPokemon.size(); i++) {
-            Pokemon pokemon = storedPokemon.get(i);
-            CompoundTag pokemonTag = pokemon.saveToNBT((RegistryAccess) provider, new CompoundTag());
-            pokemonList.put("pokemon_" + i, pokemonTag);
+            StoredPokemon stored = storedPokemon.get(i);
+            CompoundTag entryTag = new CompoundTag();
+            CompoundTag pokemonTag = stored.pokemon().saveToNBT((RegistryAccess) provider, new CompoundTag());
+            entryTag.put("pokemon", pokemonTag);
+            if (stored.ownerUuid() != null) {
+                entryTag.putUUID("owner", stored.ownerUuid());
+            }
+            pokemonList.put("pokemon_" + i, entryTag);
         }
         nbt.put("storedPokemon", pokemonList);
         compoundTag.put("poke_power", nbt);
@@ -173,5 +204,38 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         }
         powerBlock.generator.distributeEnergy(level, blockPos);
         setChanged(level, blockPos, blockState);
+    }
+
+    private static int storedPokemonIndex(String key) {
+        if (key.startsWith("pokemon_")) {
+            try {
+                return Integer.parseInt(key.substring("pokemon_".length()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private static UUID getOwnerUuid(Pokemon pokemon) {
+        if (pokemon.getOwnerUUID() == null) {
+            return getOTUuid(pokemon);
+        }
+        try {
+            return pokemon.getOwnerUUID();
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static UUID getOTUuid(Pokemon pokemon) {
+        if (pokemon.getOriginalTrainerType() != OriginalTrainerType.PLAYER || pokemon.getOriginalTrainer() == null) return null;
+        try {
+            return UUID.fromString(pokemon.getOriginalTrainer());
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private record StoredPokemon(Pokemon pokemon, UUID ownerUuid) {
     }
 }
