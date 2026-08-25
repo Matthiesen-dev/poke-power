@@ -20,6 +20,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +38,10 @@ import java.util.List;
 public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements GeoBlockEntity {
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin()
             .thenLoop("animation.power_block.idle");
-    private static final RawAnimation ACTIVE_ANIM = RawAnimation.begin()
-            .thenLoop("animation.power_block.active");
+    // Plays activate once, then loops active — setAndContinue won't restart mid-play
     private static final RawAnimation ACTIVATE_ANIM = RawAnimation.begin()
-            .thenPlay("animation.power_block.activate");
+            .thenPlay("animation.power_block.activate")
+            .thenLoop("animation.power_block.active");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final PokeEnergyGenerator generator = new PokeEnergyGenerator(48000L, 16000L);
@@ -96,9 +97,8 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "idle", 0, state ->
-                state.setAndContinue(this.isActive ? ACTIVE_ANIM : IDLE_ANIM))
-                .triggerableAnim("activate", ACTIVATE_ANIM));
+        controllers.add(new AnimationController<>(this, "controller", 0, state ->
+                state.setAndContinue(this.isActive ? ACTIVATE_ANIM : IDLE_ANIM)));
     }
 
     @Override
@@ -163,6 +163,8 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         boolean shouldBeActive = !powerBlock.storedPokemon.isEmpty();
         if (shouldBeActive != powerBlock.isActive) {
             powerBlock.isActive = shouldBeActive;
+            // Sync to client so the animation controller sees the updated state
+            level.sendBlockUpdated(blockPos, blockState, blockState, Block.UPDATE_CLIENTS);
         }
 
         if (powerBlock.isActive && powerBlock.getActiveGenerationValue() > 0) {

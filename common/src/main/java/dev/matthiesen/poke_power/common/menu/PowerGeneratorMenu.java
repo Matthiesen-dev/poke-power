@@ -12,6 +12,8 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -29,19 +31,68 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
     public static final int PARTY_SLOT_COUNT = 6;
 
     // Pixel positions used by both menu and screen
-    public static final int GEN_SLOT_X0 = 8;
-    public static final int GEN_SLOT_Y = 18;
-    public static final int PARTY_SLOT_X0 = 8;
-    public static final int PARTY_SLOT_Y = 44;
-    public static final int PLAYER_INV_X0 = 8;
-    public static final int PLAYER_INV_Y = 84;
-    public static final int HOTBAR_Y = 142;
+    public static final int GEN_SLOT_X0 = 9;
+    public static final int GEN_SLOT_Y = 23;
+    public static final int PARTY_SLOT_X0 = 9;
+    public static final int PARTY_SLOT_Y = 57;
+    public static final int PLAYER_INV_X0 = 9;
+    public static final int PLAYER_INV_Y = 97;
+    public static final int HOTBAR_Y = 155;
 
-    private final SimpleContainer genContainer = new SimpleContainer(GEN_SLOT_COUNT);
+    /**
+     * ContainerData indices for energy syncing.
+     * Energy and capacity are both longs, but well within int range (max 48000),
+     * so we use one int slot each. Indices 2–3 reserved for future use.
+     */
+    private static final int DATA_ENERGY   = 0;
+    private static final int DATA_CAPACITY = 1;
+    private static final int DATA_COUNT    = 2;
+
+    private final SimpleContainer genContainer   = new SimpleContainer(GEN_SLOT_COUNT);
     private final SimpleContainer partyContainer = new SimpleContainer(PARTY_SLOT_COUNT);
 
     @Nullable private BlockPos blockPos;
     @Nullable private Level level;
+
+    /**
+     * ContainerData that reads live from the block entity on the server side
+     * and is automatically broadcast to the client every tick via broadcastChanges().
+     * On the client, MC calls set() to update the cached values below.
+     */
+    private long cachedEnergy   = 0;
+    private long cachedCapacity = 0;
+
+    private final ContainerData energyData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            // Server: read live from entity so broadcastChanges() detects changes each tick.
+            // Client: return cached values written by set().
+            if (level != null && !level.isClientSide() && blockPos != null) {
+                if (level.getBlockEntity(blockPos) instanceof PowerBlockEntity entity) {
+                    return index == DATA_ENERGY
+                            ? (int) entity.getEnergyStorage().getEnergy()
+                            : (int) entity.getEnergyStorage().getCapacity();
+                }
+            }
+            return index == DATA_ENERGY ? (int) cachedEnergy : (int) cachedCapacity;
+        }
+
+        @Override
+        public void set(int index, int value) {
+            // Client-side: MC calls this when the server sends an update.
+            long unsigned = Integer.toUnsignedLong(value);
+            if (index == DATA_ENERGY)   cachedEnergy   = unsigned;
+            if (index == DATA_CAPACITY) cachedCapacity = unsigned;
+        }
+
+        @Override
+        public int getCount() { return DATA_COUNT; }
+    };
+
+    /** Returns the client-side cached energy (valid on both sides after sync). */
+    public long getSyncedEnergy()   { return cachedEnergy; }
+    /** Returns the client-side cached capacity (valid on both sides after sync). */
+    public long getSyncedCapacity() { return cachedCapacity; }
 
     /** Client-side constructor — registered in {@link MenuRegistry}. */
     public PowerGeneratorMenu(int containerId, Inventory inv) {
@@ -49,16 +100,18 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
         addGenSlots();
         addPartySlots();
         addPlayerInventorySlots(inv);
+        addDataSlots(energyData);
     }
 
     /** Server-side constructor — used when opening the menu for a player. */
-    public PowerGeneratorMenu(int containerId, Inventory inv, @Nullable BlockPos pos, PowerBlockEntity entity) {
+    public PowerGeneratorMenu(int containerId, Inventory inv, BlockPos pos, PowerBlockEntity entity) {
         super(MenuRegistry.POWER_GENERATOR_MENU.get(), containerId);
         this.blockPos = pos;
         this.level = entity.getLevel();
         addGenSlots();
         addPartySlots();
         addPlayerInventorySlots(inv);
+        addDataSlots(energyData);
 
         // Populate generator slots from the entity
         List<Pokemon> stored = entity.getStoredPokemon();
@@ -80,7 +133,7 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
 
     /**
      * Called from the S2C {@link dev.matthiesen.poke_power.common.network.SyncGeneratorPayload} handler
-     * to update the client-side menu after it is opened.
+     * to update the client-side Pokémon slot displays after insert/remove.
      */
     public void syncFromServer(BlockPos pos, List<ItemStack> genItems, List<ItemStack> partyItems) {
         this.blockPos = pos;
@@ -91,9 +144,7 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
     }
 
     @Nullable
-    public BlockPos getBlockPos() {
-        return blockPos;
-    }
+    public BlockPos getBlockPos() { return blockPos; }
 
     // No shift-click behaviour for this menu — pokemon slots are not real items
     @Override
@@ -123,13 +174,11 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
     }
 
     private void addPlayerInventorySlots(Inventory inv) {
-        // Main inventory (3 rows of 9, slots 9–35 in the Inventory)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new Slot(inv, col + row * 9 + 9, PLAYER_INV_X0 + col * 18, PLAYER_INV_Y + row * 18));
             }
         }
-        // Hotbar (slots 0–8 in the Inventory)
         for (int col = 0; col < 9; col++) {
             addSlot(new Slot(inv, col, PLAYER_INV_X0 + col * 18, HOTBAR_Y));
         }
@@ -144,14 +193,7 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
             super(container, index, x, y);
         }
 
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
-
-        @Override
-        public boolean mayPickup(Player player) {
-            return false;
-        }
+        @Override public boolean mayPlace(ItemStack stack)  { return false; }
+        @Override public boolean mayPickup(Player player)   { return false; }
     }
 }

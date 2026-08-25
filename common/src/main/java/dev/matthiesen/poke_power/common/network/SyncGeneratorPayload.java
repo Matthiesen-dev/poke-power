@@ -29,14 +29,14 @@ public record SyncGeneratorPayload(
                     (buf, p) -> {
                         buf.writeVarInt(p.containerId());
                         buf.writeBlockPos(p.blockPos());
-                        buf.writeCollection(p.genItems(), (b, item) -> ItemStack.STREAM_CODEC.encode((RegistryFriendlyByteBuf) b, item));
-                        buf.writeCollection(p.partyItems(), (b, item) -> ItemStack.STREAM_CODEC.encode((RegistryFriendlyByteBuf) b, item));
+                        buf.writeCollection(p.genItems(), (b, item) -> ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) b, item));
+                        buf.writeCollection(p.partyItems(), (b, item) -> ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) b, item));
                     },
                     buf -> {
                         int containerId = buf.readVarInt();
                         BlockPos pos = buf.readBlockPos();
-                        List<ItemStack> gen = buf.readList(b -> ItemStack.STREAM_CODEC.decode((RegistryFriendlyByteBuf) b));
-                        List<ItemStack> party = buf.readList(b -> ItemStack.STREAM_CODEC.decode((RegistryFriendlyByteBuf) b));
+                        List<ItemStack> gen = buf.readList(b -> ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) b));
+                        List<ItemStack> party = buf.readList(b -> ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) b));
                         return new SyncGeneratorPayload(containerId, pos, gen, party);
                     }
             );
