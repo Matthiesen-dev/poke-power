@@ -2,11 +2,14 @@ package dev.matthiesen.poke_power.common;
 
 import dev.matthiesen.libs.faststats.Token;
 import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
+import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
+import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import dev.matthiesen.poke_power.common.registry.BlockRegistry;
 import dev.matthiesen.poke_power.common.registry.CreativeModeTabRegistry;
 import dev.matthiesen.poke_power.common.registry.ItemRegistry;
+import dev.matthiesen.poke_power.common.registry.MenuRegistry;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,8 +43,12 @@ public final class PokePowerCommon extends AbstractCommonMod {
         BlockEntityRegistry.init();
         ItemRegistry.init();
         CreativeModeTabRegistry.init();
-        // MenuRegistry.init();
-        // NetworkRegistry.init();
+        MenuRegistry.init();
+
+        // Register server-bound (C2S) packets
+        var net = INSTANCE.getNetworkingManager();
+        net.registerC2S(InsertPokemonPayload.TYPE, InsertPokemonPayload.CODEC, InsertPokemonPayload::handle);
+        net.registerC2S(RemovePokemonPayload.TYPE, RemovePokemonPayload.CODEC, RemovePokemonPayload::handle);
 
         createInfoLog("Initialized");
     }

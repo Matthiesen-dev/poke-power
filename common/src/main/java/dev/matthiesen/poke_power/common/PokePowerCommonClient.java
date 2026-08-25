@@ -2,8 +2,11 @@ package dev.matthiesen.poke_power.common;
 
 import dev.matthiesen.matthiesen_core.common.AbstractCommonClientMod;
 import dev.matthiesen.poke_power.common.client.geckolib.PowerBlockRenderer;
+import dev.matthiesen.poke_power.common.client.screen.PowerGeneratorScreen;
+import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import dev.matthiesen.poke_power.common.registry.ItemRegistry;
+import dev.matthiesen.poke_power.common.registry.MenuRegistry;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +24,10 @@ public final class PokePowerCommonClient extends AbstractCommonClientMod {
     @Override
     public void initialize() {
         createInfoLog("Initializing client");
+
+        // Register the client-bound (S2C) sync packet handler
+        PokePowerCommon.INSTANCE.getNetworkingManager()
+                .registerS2C(SyncGeneratorPayload.TYPE, SyncGeneratorPayload.CODEC, SyncGeneratorPayload::handleClient);
     }
 
     public void registerRenderers() {
@@ -29,6 +36,10 @@ public final class PokePowerCommonClient extends AbstractCommonClientMod {
 
         // Block Entity Renderers
         INSTANCE.getEntityRendererManager().registerBlockEntityRenderer(BlockEntityRegistry.POWER_BLOCK_BE.get(), context -> PowerBlockRenderer.INSTANCE.getBlockRenderer());
+    }
+
+    public void registerScreens() {
+        INSTANCE.getScreenManager().registerMenuScreen(MenuRegistry.POWER_GENERATOR_MENU, PowerGeneratorScreen::new);
     }
 
     private static <T extends Item & GeoItem> GeoRenderProvider makeRendererProvider(GeoItemRenderer<T> renderer) {

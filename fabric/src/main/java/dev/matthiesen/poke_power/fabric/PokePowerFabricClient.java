@@ -10,5 +10,6 @@ public final class PokePowerFabricClient implements ClientModInitializer {
         instance.createInfoLog("Loading for Fabric Mod Loader (Client)");
         instance.initialize();
         instance.registerRenderers();
+        instance.registerScreens();
     }
 }

@@ -20,6 +20,7 @@ public final class PokePowerNeoForgeClient {
 
     public void clientSetup(FMLClientSetupEvent event) {
         INSTANCE.initialize();
+        INSTANCE.registerScreens();
     }
 
     public void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {

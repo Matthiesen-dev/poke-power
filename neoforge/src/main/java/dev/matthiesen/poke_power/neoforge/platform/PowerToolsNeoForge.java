@@ -1,7 +1,6 @@
 package dev.matthiesen.poke_power.neoforge.platform;
 
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
-import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyWrapper;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
@@ -45,7 +44,6 @@ public final class PowerToolsNeoForge implements PowerTools {
             if (targetStorage != null && targetStorage.canReceive()) {
                 int accepted = targetStorage.receiveEnergy(maxTransfer, false);
                 if (accepted > 0) {
-                    targetStorage.receiveEnergy(accepted, false);
                     storage.setEnergy(storage.getEnergy() - accepted);
                     maxTransfer -= accepted;
                 }
