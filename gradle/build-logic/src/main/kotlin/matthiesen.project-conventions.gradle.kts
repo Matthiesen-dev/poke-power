@@ -28,6 +28,7 @@ repositories {
     }
     maven("https://artefacts.cobblemon.com/releases/")
     maven("https://repo.spongepowered.org/repository/maven-public")
+    maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
     maven("https://maven.matthiesen.dev/releases") {
         name = "devMatthiesenMavenReleases"
     }
