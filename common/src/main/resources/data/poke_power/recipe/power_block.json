@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "category": "misc",
+  "pattern": [
+    "iri",
+    "rer",
+    "iri"
+  ],
+  "key": {
+    "r": {
+      "item": "minecraft:redstone_block"
+    },
+    "i": {
+      "item": "minecraft:iron_block"
+    },
+    "e": {
+      "item": "cobblemon:electirizer"
+    }
+  },
+  "result": {
+    "id": "poke_power:power_block",
+    "count": 1
+  }
+}

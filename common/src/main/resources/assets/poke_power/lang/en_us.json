@@ -1,6 +1,6 @@
 {
   "block.poke_power.power_block": "Power Block",
-  "container.poke_power.power_generator": "Pokémon Generator",
+  "container.poke_power.power_generator": "Pokemon Generator",
   "container.poke_power.generator_slots": "Generator",
   "container.poke_power.party_slots": "Party"
 }
