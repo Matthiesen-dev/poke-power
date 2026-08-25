@@ -23,6 +23,9 @@
     ],
     "client": [
       "dev.matthiesen.poke_power.fabric.PokePowerFabricClient"
+    ],
+    "jade": [
+      "dev.matthiesen.poke_power.common.client.jade.PokePowerJadePlugin"
     ]
   },
   "depends": {
@@ -30,5 +33,8 @@
     "cobblemon": ">=1.7.3 <1.8.0",
     "matthiesen_core": ">=1.2.5 <2.0.0",
     "geckolib": ">=4.8.3"
+  },
+  "suggests": {
+    "jade": ">=15.10.5"
   }
 }

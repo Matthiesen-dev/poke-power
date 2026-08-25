@@ -12,6 +12,7 @@ on:
 # - Cobblemon (MdwFAVRL)
 # - Matthiesen Core (sqEZOmQo)
 # - Geckolib (8BmcQJ2H)
+# - Jade (nvQzSEkH) - Optional
 ## Fabric Only:
 # - Fabric API (P7dR8mSH) - Required
 # - ForgeConfigAPI Port (ohNO6lps) - Required
@@ -34,7 +35,8 @@ jobs:
         [
           {"project_id":"MdwFAVRL","dependency_type":"required"},
           {"project_id":"sqEZOmQo","dependency_type":"required"},
-          {"project_id":"8BmcQJ2H","dependency_type":"required"}
+          {"project_id":"8BmcQJ2H","dependency_type":"required"},
+          {"project_id":"nvQzSEkH","dependency_type":"optional"}
         ]
       modrinth_fabric_dependencies: |-
         [

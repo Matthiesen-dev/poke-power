@@ -32,7 +32,7 @@ public final class PokeUtil {
                 .build();
     }
 
-    private MutableComponent customNameBuilder() {
+    public MutableComponent customNameBuilder() {
         MutableComponent component = pokemon.getSpecies().getTranslatedName().copy().withStyle(ChatFormatting.GRAY);
         if (pokemon.getShiny()) {
             component.append(Component.literal(" ★").withStyle(ChatFormatting.GOLD));
