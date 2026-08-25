@@ -40,3 +40,10 @@ mandatory = true
 versionRange = "[1.2.5,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "geckolib"
+mandatory = true
+versionRange = "[4.8.3,)"
+ordering = "AFTER"
+side = "BOTH"
