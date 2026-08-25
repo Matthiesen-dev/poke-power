@@ -34,18 +34,22 @@ public final class PowerGeneratorMenu extends AbstractContainerMenu {
     public static final int GEN_SLOT_Y = 23;
     public static final int PARTY_SLOT_X0 = 9;
     public static final int PARTY_SLOT_Y = 57;
-    public static final int PLAYER_INV_X0 = 9;
-    public static final int PLAYER_INV_Y = 97;
-    public static final int HOTBAR_Y = 155;
+
+    public static final int PLAYER_INV_X0 = 8;
+    public static final int PLAYER_INV_Y = 96;
+    public static final int HOTBAR_Y = 154;
 
     /**
      * ContainerData indices for energy syncing.
-     * Energy and capacity are both longs, but well within int range (max 48000),
-     * so we use one int slot each. Indices 2–3 reserved for future use.
+     * ContainerData values are synced as 16-bit shorts, so values above 32767 get
+     * corrupted. Energy and capacity can reach 120,000+, so each is split across
+     * two slots: low 16 bits and high 16 bits.
      */
-    private static final int DATA_ENERGY   = 0;
-    private static final int DATA_CAPACITY = 1;
-    private static final int DATA_COUNT    = 2;
+    private static final int DATA_ENERGY_LO   = 0;
+    private static final int DATA_ENERGY_HI   = 1;
+    private static final int DATA_CAPACITY_LO = 2;
+    private static final int DATA_CAPACITY_HI = 3;
+    private static final int DATA_COUNT       = 4;
 
     private final SimpleContainer genContainer   = new SimpleContainer(GEN_SLOT_COUNT);
     private final SimpleContainer partyContainer = new SimpleContainer(PARTY_SLOT_COUNT);
@@ -66,22 +70,34 @@ public final class PowerGeneratorMenu extends AbstractContainerMenu {
         public int get(int index) {
             // Server: read live from entity so broadcastChanges() detects changes each tick.
             // Client: return cached values written by set().
+            long energy   = cachedEnergy;
+            long capacity = cachedCapacity;
             if (level != null && !level.isClientSide() && blockPos != null) {
                 if (level.getBlockEntity(blockPos) instanceof PowerBlockEntity entity) {
-                    return index == DATA_ENERGY
-                            ? (int) entity.getEnergyStorage().getEnergy()
-                            : (int) entity.getEnergyStorage().getCapacity();
+                    energy   = entity.getEnergyStorage().getEnergy();
+                    capacity = entity.getEnergyStorage().getCapacity();
                 }
             }
-            return index == DATA_ENERGY ? (int) cachedEnergy : (int) cachedCapacity;
+            return switch (index) {
+                case DATA_ENERGY_LO   -> (int) (energy   & 0xFFFFL);
+                case DATA_ENERGY_HI   -> (int) (energy   >> 16);
+                case DATA_CAPACITY_LO -> (int) (capacity & 0xFFFFL);
+                case DATA_CAPACITY_HI -> (int) (capacity >> 16);
+                default -> 0;
+            };
         }
 
         @Override
         public void set(int index, int value) {
             // Client-side: MC calls this when the server sends an update.
-            long unsigned = Integer.toUnsignedLong(value);
-            if (index == DATA_ENERGY)   cachedEnergy   = unsigned;
-            if (index == DATA_CAPACITY) cachedCapacity = unsigned;
+            // Each value arrives as a signed short; mask to 16 bits before reassembling.
+            int bits = value & 0xFFFF;
+            switch (index) {
+                case DATA_ENERGY_LO   -> cachedEnergy   = (cachedEnergy   & 0xFFFF0000L) | bits;
+                case DATA_ENERGY_HI   -> cachedEnergy   = (cachedEnergy   & 0x0000FFFFL) | ((long) bits << 16);
+                case DATA_CAPACITY_LO -> cachedCapacity = (cachedCapacity & 0xFFFF0000L) | bits;
+                case DATA_CAPACITY_HI -> cachedCapacity = (cachedCapacity & 0x0000FFFFL) | ((long) bits << 16);
+            }
         }
 
         @Override

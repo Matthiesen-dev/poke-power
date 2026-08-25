@@ -12,6 +12,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
+import java.util.List;
+
 public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGeneratorMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -92,6 +94,28 @@ public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGenera
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
+
+    private boolean isMouseOverEnergyBar(int mouseX, int mouseY) {
+        int barLeft = leftPos + ENERGY_X;
+        int barTop  = topPos  + ENERGY_Y;
+        return mouseX >= barLeft && mouseX < barLeft + ENERGY_W + 2
+            && mouseY >= barTop  && mouseY < barTop  + ENERGY_H + 2;
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        super.renderTooltip(graphics, mouseX, mouseY);
+        if (isMouseOverEnergyBar(mouseX, mouseY)) {
+            long energy   = getMenu().getSyncedEnergy();
+            long capacity = getMenu().getSyncedCapacity();
+            int  pct      = capacity > 0 ? (int) (energy * 100 / capacity) : 0;
+            graphics.renderComponentTooltip(font, List.of(
+                    Component.translatable("tooltip.poke_power.energy_bar.title"),
+                    Component.translatable("tooltip.poke_power.energy_bar.stored", energy, capacity),
+                    Component.translatable("tooltip.poke_power.energy_bar.percent", pct)
+            ), mouseX, mouseY);
+        }
+    }
 
     private void renderEnergyBar(GuiGraphics graphics) {
         long energy   = getMenu().getSyncedEnergy();

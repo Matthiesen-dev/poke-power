@@ -3,5 +3,8 @@
   "container.poke_power.power_generator": "Pokemon Generator",
   "container.poke_power.generator_slots": "Generator",
   "container.poke_power.party_slots": "Party",
-  "config.jade.plugin_poke_power.power_block": "Power Block"
+  "config.jade.plugin_poke_power.power_block": "Power Block",
+  "tooltip.poke_power.energy_bar.title": "Energy Storage",
+  "tooltip.poke_power.energy_bar.stored": "%s / %s FE",
+  "tooltip.poke_power.energy_bar.percent": "%s%%"
 }
