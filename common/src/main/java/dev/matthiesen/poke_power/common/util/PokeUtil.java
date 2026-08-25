@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.utility.item.ItemBuilder;
+import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -66,12 +67,17 @@ public final class PokeUtil {
         return components.toArray(new Component[0]);
     }
 
+    private String getPowerPerTick() {
+        String format = "%s FE/t";
+        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
+        int power = pokemon.getLevel() * powerPerPokeLevel;
+        return String.format(format, power);
+    }
+
     private Component[] getLore() {
         String pokeball = pokemon.getCaughtBall().item().getDefaultInstance().getDisplayName().getString();
         String level = String.valueOf(pokemon.getLevel());
         String nickname = pokemon.getNickname() != null ? pokemon.getNickname().getString() : "No nickname";
-        String heldItem = pokemon.heldItem().isEmpty() ? "No held item" : pokemon.heldItem().getDisplayName().getString();
-        String form = pokemon.getForm().getName();
 
         List<Component> pokeLore = new ArrayList<>();
 
@@ -81,9 +87,11 @@ public final class PokeUtil {
                 .append(Component.literal(level).withStyle(ChatFormatting.WHITE)));
         pokeLore.add(Component.literal("Nickname: ").withStyle(ChatFormatting.DARK_GREEN)
                 .append(Component.literal(nickname).withStyle(ChatFormatting.WHITE)));
-        pokeLore.add(Component.literal("Held Item: ").withStyle(ChatFormatting.DARK_PURPLE)
-                .append(Component.literal(heldItem).withStyle(ChatFormatting.WHITE)));
-        pokeLore.add(Component.literal("Form: ").withStyle(ChatFormatting.GOLD).append(Component.literal(form)));
+
+        pokeLore.add(Component.empty());
+
+        pokeLore.add(Component.literal("Power Generation: ").withStyle(ChatFormatting.YELLOW)
+                .append(Component.literal(getPowerPerTick()).withStyle(ChatFormatting.WHITE)));
 
         return buildComponentList(pokeLore);
     }
