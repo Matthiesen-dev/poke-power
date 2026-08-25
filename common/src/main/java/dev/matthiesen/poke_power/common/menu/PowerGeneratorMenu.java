@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class PowerGeneratorMenu extends AbstractContainerMenu {
+public final class PowerGeneratorMenu extends AbstractContainerMenu {
 
     // Slot index ranges exposed to the screen for click handling
     public static final int GEN_SLOT_START = 0;
