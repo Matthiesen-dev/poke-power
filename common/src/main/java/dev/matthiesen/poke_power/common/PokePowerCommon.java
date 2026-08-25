@@ -2,6 +2,8 @@ package dev.matthiesen.poke_power.common;
 
 import dev.matthiesen.libs.faststats.Token;
 import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
+import dev.matthiesen.matthiesen_core.common.api.platform.loader.ModConfigType;
+import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
@@ -27,6 +29,10 @@ public final class PokePowerCommon extends AbstractCommonMod {
         return new ResourceLocation(MOD_ID, path);
     }
 
+    public static String modConfig(String path) {
+        return MOD_ID + "/" + path + ".toml";
+    }
+
     public PokePowerCommon() {
         super(MOD_ID, MOD_NAME);
     }
@@ -38,6 +44,8 @@ public final class PokePowerCommon extends AbstractCommonMod {
 
     public void initialize() {
         super.initialize();
+
+        registerModConfig(MOD_ID, ModConfigType.SERVER, PokePowerConfig.SERVER_SPEC, modConfig("server"));
 
         BlockRegistry.init();
         BlockEntityRegistry.init();

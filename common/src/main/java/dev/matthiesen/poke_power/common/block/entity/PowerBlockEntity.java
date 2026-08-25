@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
+import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyGenerator;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
@@ -44,7 +45,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
             .thenLoop("animation.power_block.active");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private final PokeEnergyGenerator generator = new PokeEnergyGenerator(48000L, 16000L);
+    private final PokeEnergyGenerator generator = new PokeEnergyGenerator(120000L, 16000L);
 
     private boolean isActive = false;
     // Mutable list - never wrap in unmodifiableList so insertPokemon/takePokemon work correctly
@@ -61,7 +62,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         if (!isActive) return 0;
         long totalGeneration = 0;
         for (Pokemon pokemon : storedPokemon) {
-            totalGeneration += (long) pokemon.getLevel() * 50L;
+            totalGeneration += (long) pokemon.getLevel() * PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
         }
         return totalGeneration;
     }

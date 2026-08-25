@@ -8,8 +8,6 @@ import com.cobblemon.mod.common.pokemon.PokemonStats;
 import com.cobblemon.mod.common.util.LocalizationUtilsKt;
 import dev.matthiesen.matthiesen_core.common.utility.item.ItemBuilder;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -27,20 +25,6 @@ public final class PokeUtil {
     public PokeUtil(@NotNull Pokemon pokemon) {
         this.pokemon = pokemon;
         this.gender = pokemon.getGender();
-    }
-
-    public Pokemon getPokemon() {
-        return pokemon;
-    }
-
-    public static PokeUtil fromNBT(CompoundTag nbt, RegistryAccess registryAccess) {
-        Pokemon pokemon = new Pokemon();
-        pokemon.loadFromNBT(registryAccess, nbt);
-        return new PokeUtil(pokemon);
-    }
-
-    public CompoundTag toNBT(RegistryAccess registryAccess) {
-        return pokemon.saveToNBT(registryAccess, new CompoundTag());
     }
 
     public ItemStack toItem() {

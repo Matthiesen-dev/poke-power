@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -104,7 +103,7 @@ public class PowerGeneratorMenu extends AbstractContainerMenu {
     }
 
     /** Server-side constructor — used when opening the menu for a player. */
-    public PowerGeneratorMenu(int containerId, Inventory inv, BlockPos pos, PowerBlockEntity entity) {
+    public PowerGeneratorMenu(int containerId, Inventory inv, @Nullable BlockPos pos, PowerBlockEntity entity) {
         super(MenuRegistry.POWER_GENERATOR_MENU.get(), containerId);
         this.blockPos = pos;
         this.level = entity.getLevel();
