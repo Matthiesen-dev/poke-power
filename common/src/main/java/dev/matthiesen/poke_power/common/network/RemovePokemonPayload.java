@@ -4,8 +4,6 @@ import dev.matthiesen.matthiesen_core.common.core.network.PacketContext;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
-import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -44,10 +42,7 @@ public record RemovePokemonPayload(BlockPos pos, int genSlotIndex) implements Cu
             List<Pokemon> stored = entity.getStoredPokemon();
             if (payload.genSlotIndex() < 0 || payload.genSlotIndex() >= stored.size()) return;
 
-            Pokemon pokemon = stored.get(payload.genSlotIndex());
-            if (entity.takePokemon(pokemon)) {
-                PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
-                party.add(pokemon);
+            if (entity.returnPokemonToOwner(payload.genSlotIndex())) {
                 entity.setChanged();
                 syncMenuToPlayer(player, entity);
             }

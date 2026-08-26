@@ -43,7 +43,7 @@ public record InsertPokemonPayload(BlockPos pos, int partySlotIndex) implements 
             Pokemon pokemon = party.get(payload.partySlotIndex());
             if (pokemon == null) return;
 
-            if (entity.insertPokemon(pokemon)) {
+            if (entity.insertPokemon(pokemon, player.getUUID())) {
                 party.remove(pokemon);
                 entity.setChanged();
                 syncMenuToPlayer(player, entity);
