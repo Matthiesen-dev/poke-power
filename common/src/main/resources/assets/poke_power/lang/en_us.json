@@ -5,6 +5,7 @@
   "container.poke_power.party_slots": "Party",
   "config.jade.plugin_poke_power.power_block": "Power Block",
   "tooltip.poke_power.energy_bar.title": "Energy Storage",
-  "tooltip.poke_power.energy_bar.stored": "%s / %s FE",
-  "tooltip.poke_power.energy_bar.percent": "%s%%"
+  "tooltip.poke_power.energy_bar.capacity": "Capacity: ",
+  "tooltip.poke_power.energy_bar.stored": "Stored: ",
+  "tooltip.poke_power.energy_bar.value": "%s FE"
 }
