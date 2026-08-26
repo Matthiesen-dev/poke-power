@@ -5,6 +5,8 @@ import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
+import dev.matthiesen.poke_power.common.util.EnergyUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -109,10 +111,21 @@ public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGenera
             long energy   = getMenu().getSyncedEnergy();
             long capacity = getMenu().getSyncedCapacity();
             int  pct      = capacity > 0 ? (int) (energy * 100 / capacity) : 0;
+            ChatFormatting pctColor = pct < 25 ? ChatFormatting.RED : (pct < 75 ? ChatFormatting.YELLOW : ChatFormatting.GREEN);
             graphics.renderComponentTooltip(font, List.of(
-                    Component.translatable("tooltip.poke_power.energy_bar.title"),
-                    Component.translatable("tooltip.poke_power.energy_bar.stored", energy, capacity),
-                    Component.translatable("tooltip.poke_power.energy_bar.percent", pct)
+                    Component.translatable("tooltip.poke_power.energy_bar.title").withStyle(style -> style.withBold(true).withColor(ChatFormatting.AQUA)),
+
+                    Component.translatable("tooltip.poke_power.energy_bar.capacity")
+                            .withStyle(style -> style.withBold(true).withColor(pctColor))
+                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtil.toEnergyString(capacity))
+                                    .withStyle(style -> style.withBold(false).withColor(ChatFormatting.YELLOW))
+                            ),
+
+                    Component.translatable("tooltip.poke_power.energy_bar.stored")
+                            .withStyle(style -> style.withBold(true).withColor(pctColor))
+                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtil.toEnergyString(energy))
+                                    .withStyle(style -> style.withBold(false).withColor(ChatFormatting.YELLOW))
+                            )
             ), mouseX, mouseY);
         }
     }
