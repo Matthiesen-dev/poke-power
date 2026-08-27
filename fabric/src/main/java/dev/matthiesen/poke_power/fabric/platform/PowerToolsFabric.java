@@ -1,8 +1,8 @@
 package dev.matthiesen.poke_power.fabric.platform;
 
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
+import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.matthiesen_core.fabric.api.energy.FabricEnergyWrapper;
-import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.BlockPos;
@@ -17,7 +17,7 @@ public final class PowerToolsFabric implements PowerTools {
     @Override
     public void registerEnergyCapability(Supplier<BlockEntityType<?>> blockEntityTypeSupplier) {
         EnergyStorage.SIDED.registerForBlockEntities((blockEntity, side) -> {
-            if (blockEntity instanceof PowerBlockEntity energyBlock) {
+            if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock && isPokePowerBlockEntity(blockEntity)) {
                 return new FabricEnergyWrapper(energyBlock.getEnergyStorage());
             }
             return null;
@@ -46,6 +46,24 @@ public final class PowerToolsFabric implements PowerTools {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public boolean supportsEnergyTransfer(Level level, BlockPos pos, Direction direction) {
+        BlockPos neighborPos = pos.relative(direction);
+        EnergyStorage targetStorage = EnergyStorage.SIDED.find(level, neighborPos, direction.getOpposite());
+        return targetStorage != null && (targetStorage.supportsInsertion() || targetStorage.supportsExtraction());
+    }
+
+    @Override
+    public long pushEnergyTo(long maxAmount, Level level, BlockPos targetPos, Direction fromSide) {
+        EnergyStorage targetStorage = EnergyStorage.SIDED.find(level, targetPos, fromSide);
+        if (targetStorage == null || !targetStorage.supportsInsertion()) return 0;
+        try (Transaction transaction = Transaction.openOuter()) {
+            long inserted = targetStorage.insert(maxAmount, transaction);
+            if (inserted > 0) transaction.commit();
+            return inserted;
         }
     }
 }

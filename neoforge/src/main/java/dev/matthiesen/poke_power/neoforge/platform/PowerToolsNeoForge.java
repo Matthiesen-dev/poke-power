@@ -1,8 +1,8 @@
 package dev.matthiesen.poke_power.neoforge.platform;
 
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
+import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyWrapper;
-import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,7 +22,7 @@ public final class PowerToolsNeoForge implements PowerTools {
                 Capabilities.EnergyStorage.BLOCK,
                 blockEntityTypeSupplier.get(),
                 (blockEntity, side) -> {
-                    if (blockEntity instanceof PowerBlockEntity energyBlock) {
+                    if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock && isPokePowerBlockEntity(blockEntity)) {
                         return new NeoForgeEnergyWrapper(energyBlock.getEnergyStorage());
                     }
                     return null;
@@ -49,5 +49,19 @@ public final class PowerToolsNeoForge implements PowerTools {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean supportsEnergyTransfer(Level level, BlockPos pos, Direction direction) {
+        BlockPos neighborPos = pos.relative(direction);
+        IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, direction.getOpposite());
+        return targetStorage != null && (targetStorage.canReceive() || targetStorage.canExtract());
+    }
+
+    @Override
+    public long pushEnergyTo(long maxAmount, Level level, BlockPos targetPos, Direction fromSide) {
+        IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, targetPos, fromSide);
+        if (targetStorage == null || !targetStorage.canReceive()) return 0;
+        return targetStorage.receiveEnergy((int) Math.min(maxAmount, Integer.MAX_VALUE), false);
     }
 }

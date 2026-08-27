@@ -2,6 +2,7 @@ package dev.matthiesen.poke_power.common.registry;
 
 import dev.matthiesen.matthiesen_core.common.registry.AbstractBlockEntityRegistry;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
+import dev.matthiesen.poke_power.common.block.entity.CableBlockEntity;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
@@ -17,10 +18,13 @@ public final class BlockEntityRegistry extends AbstractBlockEntityRegistry {
     public static void init() {}
 
     public static final Supplier<BlockEntityType<PowerBlockEntity>> POWER_BLOCK_BE;
+    public static final Supplier<BlockEntityType<CableBlockEntity>> POWER_CABLE_BE;
 
     static {
         POWER_BLOCK_BE = INSTANCE.register("power_block", PowerBlockEntity::new, BlockRegistry.POWER_BLOCK);
+        POWER_CABLE_BE = INSTANCE.register("power_cable", CableBlockEntity::new, BlockRegistry.POWER_CABLE);
 
         PokePowerCommon.POWER_TOOLS.registerEnergyCapability(POWER_BLOCK_BE::get);
+        PokePowerCommon.POWER_TOOLS.registerEnergyCapability(POWER_CABLE_BE::get);
     }
 }
