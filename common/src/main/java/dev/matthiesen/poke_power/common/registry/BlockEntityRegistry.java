@@ -24,7 +24,7 @@ public final class BlockEntityRegistry extends AbstractBlockEntityRegistry {
         POWER_BLOCK_BE = INSTANCE.register("power_block", PowerBlockEntity::new, BlockRegistry.POWER_BLOCK);
         POWER_CABLE_BE = INSTANCE.register("power_cable", CableBlockEntity::new, BlockRegistry.POWER_CABLE);
 
-        PokePowerCommon.POWER_TOOLS.registerEnergyCapability(POWER_BLOCK_BE::get);
-        PokePowerCommon.POWER_TOOLS.registerEnergyCapability(POWER_CABLE_BE::get);
+        PokePowerCommon.POWER_TOOLS.registerBlockEntityEnergyCapability(POWER_BLOCK_BE::get);
+        PokePowerCommon.POWER_TOOLS.registerBlockEntityEnergyCapability(POWER_CABLE_BE::get);
     }
 }
