@@ -2,7 +2,7 @@ package dev.matthiesen.poke_power.common.network;
 
 import dev.matthiesen.matthiesen_core.common.core.network.PacketContext;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
-import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
+import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -51,7 +51,7 @@ public record SyncGeneratorPayload(
         context.enqueue(() -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null
-                    && mc.player.containerMenu instanceof PowerGeneratorMenu menu
+                    && mc.player.containerMenu instanceof PowerBlockMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.syncFromServer(payload.blockPos(), payload.genItems(), payload.partyItems());
             }

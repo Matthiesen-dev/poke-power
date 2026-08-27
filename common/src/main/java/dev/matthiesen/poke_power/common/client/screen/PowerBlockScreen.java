@@ -2,7 +2,7 @@ package dev.matthiesen.poke_power.common.client.screen;
 
 import dev.matthiesen.matthiesen_core.common.utility.ui.screen.AbstractSimpleScreen;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
-import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
+import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
 import dev.matthiesen.poke_power.common.util.EnergyUtil;
@@ -16,7 +16,7 @@ import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
 
-public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGeneratorMenu> {
+public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu> {
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(PokePowerCommon.MOD_ID, "textures/gui/power_generator.png");
@@ -27,7 +27,7 @@ public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGenera
     private static final int ENERGY_W = 12; // interior width (bar itself, inside the 14px frame)
     private static final int ENERGY_H = 50; // interior height
 
-    public PowerGeneratorScreen(PowerGeneratorMenu menu, Inventory inv, Component title) {
+    public PowerBlockScreen(PowerBlockMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
     }
 
@@ -58,10 +58,10 @@ public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGenera
         // Section headers drawn in screen-local coords (relative to leftPos/topPos)
         graphics.drawString(font,
                 Component.translatable("container.poke_power.generator_slots"),
-                PowerGeneratorMenu.GEN_SLOT_X0, 8, 0x404040, false);
+                PowerBlockMenu.GEN_SLOT_X0, 8, 0x404040, false);
         graphics.drawString(font,
                 Component.translatable("container.poke_power.party_slots"),
-                PowerGeneratorMenu.PARTY_SLOT_X0, 44, 0x404040, false);
+                PowerBlockMenu.PARTY_SLOT_X0, 44, 0x404040, false);
     }
 
     @Override
@@ -74,18 +74,18 @@ public final class PowerGeneratorScreen extends AbstractSimpleScreen<PowerGenera
                 if (pos != null) {
                     var net = PokePowerCommon.INSTANCE.getNetworkingManager();
 
-                    if (slotIdx >= PowerGeneratorMenu.GEN_SLOT_START
-                            && slotIdx < PowerGeneratorMenu.GEN_SLOT_START + PowerGeneratorMenu.GEN_SLOT_COUNT) {
+                    if (slotIdx >= PowerBlockMenu.GEN_SLOT_START
+                            && slotIdx < PowerBlockMenu.GEN_SLOT_START + PowerBlockMenu.GEN_SLOT_COUNT) {
                         // Click on a generator slot → request removal back to party
                         if (!hovered.getItem().isEmpty()) {
-                            net.sendToServer(new RemovePokemonPayload(pos, slotIdx - PowerGeneratorMenu.GEN_SLOT_START));
+                            net.sendToServer(new RemovePokemonPayload(pos, slotIdx - PowerBlockMenu.GEN_SLOT_START));
                             return true;
                         }
-                    } else if (slotIdx >= PowerGeneratorMenu.PARTY_SLOT_START
-                            && slotIdx < PowerGeneratorMenu.PARTY_SLOT_START + PowerGeneratorMenu.PARTY_SLOT_COUNT) {
+                    } else if (slotIdx >= PowerBlockMenu.PARTY_SLOT_START
+                            && slotIdx < PowerBlockMenu.PARTY_SLOT_START + PowerBlockMenu.PARTY_SLOT_COUNT) {
                         // Click on a party slot → request insertion into generator
                         if (!hovered.getItem().isEmpty()) {
-                            net.sendToServer(new InsertPokemonPayload(pos, slotIdx - PowerGeneratorMenu.PARTY_SLOT_START));
+                            net.sendToServer(new InsertPokemonPayload(pos, slotIdx - PowerBlockMenu.PARTY_SLOT_START));
                             return true;
                         }
                     }

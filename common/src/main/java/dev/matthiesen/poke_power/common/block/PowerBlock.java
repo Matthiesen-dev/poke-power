@@ -3,7 +3,7 @@ package dev.matthiesen.poke_power.common.block;
 import dev.matthiesen.matthiesen_core.common.utility.ui.menu.MenuProvider;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
-import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
+import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,12 +39,12 @@ public final class PowerBlock extends Block implements EntityBlock {
             if (level.getBlockEntity(pos) instanceof PowerBlockEntity entity) {
                 MenuProvider.openMenu(serverPlayer,
                         MenuProvider.createProvider(
-                                (containerId, inv, p) -> new PowerGeneratorMenu(containerId, inv, pos, entity),
+                                (containerId, inv, p) -> new PowerBlockMenu(containerId, inv, pos, entity),
                                 Component.translatable("container.poke_power.power_generator")
                         )
                 );
                 // Sync current generator + party state to the client
-                if (serverPlayer.containerMenu instanceof PowerGeneratorMenu genMenu) {
+                if (serverPlayer.containerMenu instanceof PowerBlockMenu genMenu) {
                     PokePowerCommon.INSTANCE.getNetworkingManager()
                             .sendToPlayer(serverPlayer, entity.buildSyncPacket(serverPlayer, genMenu.containerId));
                 }

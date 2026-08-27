@@ -2,7 +2,7 @@ package dev.matthiesen.poke_power.common;
 
 import dev.matthiesen.matthiesen_core.common.AbstractCommonClientMod;
 import dev.matthiesen.poke_power.common.client.geckolib.PowerBlockRenderer;
-import dev.matthiesen.poke_power.common.client.screen.PowerGeneratorScreen;
+import dev.matthiesen.poke_power.common.client.screen.PowerBlockScreen;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import dev.matthiesen.poke_power.common.registry.ItemRegistry;
@@ -39,7 +39,7 @@ public final class PokePowerCommonClient extends AbstractCommonClientMod {
     }
 
     public void registerScreens() {
-        INSTANCE.getScreenManager().registerMenuScreen(MenuRegistry.POWER_GENERATOR_MENU, PowerGeneratorScreen::new);
+        INSTANCE.getScreenManager().registerMenuScreen(MenuRegistry.POWER_GENERATOR_MENU, PowerBlockScreen::new);
     }
 
     private static <T extends Item & GeoItem> GeoRenderProvider makeRendererProvider(GeoItemRenderer<T> renderer) {
