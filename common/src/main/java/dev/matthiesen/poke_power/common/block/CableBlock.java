@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -26,12 +26,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class CableBlock extends Block implements EntityBlock {
-    private static final BooleanProperty NORTH = BlockStateProperties.NORTH;
-    private static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
-    private static final BooleanProperty EAST = BlockStateProperties.EAST;
-    private static final BooleanProperty WEST = BlockStateProperties.WEST;
-    private static final BooleanProperty UP = BlockStateProperties.UP;
-    private static final BooleanProperty DOWN = BlockStateProperties.DOWN;
+    private static final EnumProperty<ConnectionType> NORTH = EnumProperty.create("north", ConnectionType.class);
+    private static final EnumProperty<ConnectionType> SOUTH = EnumProperty.create("south", ConnectionType.class);
+    private static final EnumProperty<ConnectionType> EAST = EnumProperty.create("east", ConnectionType.class);
+    private static final EnumProperty<ConnectionType> WEST = EnumProperty.create("west", ConnectionType.class);
+    private static final EnumProperty<ConnectionType> UP = EnumProperty.create("up", ConnectionType.class);
+    private static final EnumProperty<ConnectionType> DOWN = EnumProperty.create("down", ConnectionType.class);
 
     private static final VoxelShape CORE_SHAPE = Block.box(6, 6, 6, 10, 10, 10);
     private static final VoxelShape NORTH_SHAPE = Block.box(6, 6, 0, 10, 10, 6);
@@ -50,12 +50,12 @@ public final class CableBlock extends Block implements EntityBlock {
         );
         // Default state is a floating pipe center with no arms connected
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(NORTH, false)
-                .setValue(SOUTH, false)
-                .setValue(EAST, false)
-                .setValue(WEST, false)
-                .setValue(UP, false)
-                .setValue(DOWN, false));
+                .setValue(NORTH, ConnectionType.NONE)
+                .setValue(SOUTH, ConnectionType.NONE)
+                .setValue(EAST, ConnectionType.NONE)
+                .setValue(WEST, ConnectionType.NONE)
+                .setValue(UP, ConnectionType.NONE)
+                .setValue(DOWN, ConnectionType.NONE));
     }
 
     // Define the properties this block uses
@@ -69,42 +69,52 @@ public final class CableBlock extends Block implements EntityBlock {
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
+        ConnectionType northType = getConnectionType(level, pos, Direction.NORTH);
+        ConnectionType southType = getConnectionType(level, pos, Direction.SOUTH);
+        ConnectionType eastType = getConnectionType(level, pos, Direction.EAST);
+        ConnectionType westType = getConnectionType(level, pos, Direction.WEST);
+        ConnectionType upType = getConnectionType(level, pos, Direction.UP);
+        ConnectionType downType = getConnectionType(level, pos, Direction.DOWN);
 
         return this.defaultBlockState()
-                .setValue(NORTH, shouldConnect(level, pos, Direction.NORTH))
-                .setValue(SOUTH, shouldConnect(level, pos, Direction.SOUTH))
-                .setValue(EAST, shouldConnect(level, pos, Direction.EAST))
-                .setValue(WEST, shouldConnect(level, pos, Direction.WEST))
-                .setValue(UP, shouldConnect(level, pos, Direction.UP))
-                .setValue(DOWN, shouldConnect(level, pos, Direction.DOWN));
+                .setValue(NORTH, northType)
+                .setValue(SOUTH, southType)
+                .setValue(EAST, eastType)
+                .setValue(WEST, westType)
+                .setValue(UP, upType)
+                .setValue(DOWN, downType);
     }
 
     // Updates connections automatically when a neighboring block changes or gets broken
     @Override
     public @NotNull BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
-        BooleanProperty property = getPropertyForDirection(direction);
-        if (property != null) {
-            return state.setValue(property, shouldConnect(level, currentPos, direction));
-        }
-        return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        return state.setValue(getPropertyForDirection(direction), getConnectionType(level, currentPos, direction));
     }
 
-    private boolean shouldConnect(LevelAccessor level, BlockPos currentPos, Direction direction) {
+    private ConnectionType getConnectionType(LevelAccessor level, BlockPos currentPos, Direction direction) {
         BlockPos targetPos = currentPos.relative(direction);
         BlockState targetState = level.getBlockState(targetPos);
 
-        if (targetState.getBlock() == this) {
-            return true;
+        if (targetState.getBlock() instanceof CableBlock) {
+            return ConnectionType.CABLE;
         }
 
         if (!(level instanceof Level currentLevel)) {
-            return false;
+            return ConnectionType.NONE;
         }
 
-        return PokePowerCommon.POWER_TOOLS.supportsEnergyTransfer(currentLevel, currentPos, direction);
+        if (PokePowerCommon.POWER_TOOLS.supportsEnergyTransfer(currentLevel, currentPos, direction)) {
+            return ConnectionType.MACHINE;
+        }
+
+        return ConnectionType.NONE;
     }
 
-    private BooleanProperty getPropertyForDirection(Direction direction) {
+    private boolean isConnected(ConnectionType connectionType) {
+        return connectionType != ConnectionType.NONE;
+    }
+
+    private EnumProperty<ConnectionType> getPropertyForDirection(Direction direction) {
         return switch (direction) {
             case NORTH -> NORTH;
             case SOUTH -> SOUTH;
@@ -118,13 +128,30 @@ public final class CableBlock extends Block implements EntityBlock {
     @Override
     protected @NotNull VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         VoxelShape shape = CORE_SHAPE;
-        if (state.getValue(NORTH)) shape = Shapes.or(shape, NORTH_SHAPE);
-        if (state.getValue(SOUTH)) shape = Shapes.or(shape, SOUTH_SHAPE);
-        if (state.getValue(EAST)) shape = Shapes.or(shape, EAST_SHAPE);
-        if (state.getValue(WEST)) shape = Shapes.or(shape, WEST_SHAPE);
-        if (state.getValue(UP)) shape = Shapes.or(shape, UP_SHAPE);
-        if (state.getValue(DOWN)) shape = Shapes.or(shape, DOWN_SHAPE);
+        if (isConnected(state.getValue(NORTH))) shape = Shapes.or(shape, NORTH_SHAPE);
+        if (isConnected(state.getValue(SOUTH))) shape = Shapes.or(shape, SOUTH_SHAPE);
+        if (isConnected(state.getValue(EAST))) shape = Shapes.or(shape, EAST_SHAPE);
+        if (isConnected(state.getValue(WEST))) shape = Shapes.or(shape, WEST_SHAPE);
+        if (isConnected(state.getValue(UP))) shape = Shapes.or(shape, UP_SHAPE);
+        if (isConnected(state.getValue(DOWN))) shape = Shapes.or(shape, DOWN_SHAPE);
         return shape;
+    }
+
+    private enum ConnectionType implements StringRepresentable {
+        NONE("none"),
+        CABLE("cable"),
+        MACHINE("machine");
+
+        private final String serializedName;
+
+        ConnectionType(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return serializedName;
+        }
     }
 
     @Override
