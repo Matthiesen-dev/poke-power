@@ -5,6 +5,7 @@ import dev.matthiesen.poke_power.common.block.entity.CableBlockEntity;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -45,6 +46,18 @@ public interface PowerTools {
      * @return the amount actually inserted
      */
     long pushEnergyTo(long maxAmount, Level level, BlockPos targetPos, Direction fromSide);
+
+    /**
+     * Checks whether the given stack can receive energy.
+     */
+    boolean canChargeItem(ItemStack stack);
+
+    /**
+     * Attempts to insert up to {@code maxAmount} energy into the given item stack.
+     *
+     * @return the amount actually inserted
+     */
+    long chargeItem(ItemStack stack, long maxAmount);
 
     /**
      * Checks if the given block entity is a PokePower block entity (either a PowerBlockEntity or CableBlockEntity).

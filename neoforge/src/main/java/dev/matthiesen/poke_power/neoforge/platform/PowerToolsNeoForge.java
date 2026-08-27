@@ -6,6 +6,7 @@ import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyWrapper;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -63,5 +64,20 @@ public final class PowerToolsNeoForge implements PowerTools {
         IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, targetPos, fromSide);
         if (targetStorage == null || !targetStorage.canReceive()) return 0;
         return targetStorage.receiveEnergy((int) Math.min(maxAmount, Integer.MAX_VALUE), false);
+    }
+
+    @Override
+    public boolean canChargeItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return energyStorage != null && energyStorage.canReceive();
+    }
+
+    @Override
+    public long chargeItem(ItemStack stack, long maxAmount) {
+        if (stack.isEmpty() || maxAmount <= 0) return 0;
+        IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (energyStorage == null || !energyStorage.canReceive()) return 0;
+        return energyStorage.receiveEnergy((int) Math.min(maxAmount, Integer.MAX_VALUE), false);
     }
 }
