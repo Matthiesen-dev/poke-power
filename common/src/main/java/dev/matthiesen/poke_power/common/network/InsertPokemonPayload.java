@@ -3,7 +3,7 @@ package dev.matthiesen.poke_power.common.network;
 import dev.matthiesen.matthiesen_core.common.core.network.PacketContext;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
-import dev.matthiesen.poke_power.common.menu.PowerGeneratorMenu;
+import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -52,7 +52,7 @@ public record InsertPokemonPayload(BlockPos pos, int partySlotIndex) implements 
     }
 
     private static void syncMenuToPlayer(ServerPlayer player, PowerBlockEntity entity) {
-        if (player.containerMenu instanceof PowerGeneratorMenu genMenu) {
+        if (player.containerMenu instanceof PowerBlockMenu genMenu) {
             PokePowerCommon.INSTANCE.getNetworkingManager()
                     .sendToPlayer(player, entity.buildSyncPacket(player, genMenu.containerId));
         }

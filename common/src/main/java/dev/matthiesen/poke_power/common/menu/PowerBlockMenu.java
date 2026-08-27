@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public final class PowerGeneratorMenu extends AbstractContainerMenu {
+public final class PowerBlockMenu extends AbstractContainerMenu {
 
     // Slot index ranges exposed to the screen for click handling
     public static final int GEN_SLOT_START = 0;
@@ -187,7 +187,7 @@ public final class PowerGeneratorMenu extends AbstractContainerMenu {
     public long getSyncedCapacity() { return cachedCapacity; }
 
     /** Client-side constructor — registered in {@link MenuRegistry}. */
-    public PowerGeneratorMenu(int containerId, Inventory inv) {
+    public PowerBlockMenu(int containerId, Inventory inv) {
         super(MenuRegistry.POWER_GENERATOR_MENU.get(), containerId);
         addGenSlots();
         addPartySlots();
@@ -197,7 +197,7 @@ public final class PowerGeneratorMenu extends AbstractContainerMenu {
     }
 
     /** Server-side constructor — used when opening the menu for a player. */
-    public PowerGeneratorMenu(int containerId, Inventory inv, @Nullable BlockPos pos, PowerBlockEntity entity) {
+    public PowerBlockMenu(int containerId, Inventory inv, @Nullable BlockPos pos, PowerBlockEntity entity) {
         super(MenuRegistry.POWER_GENERATOR_MENU.get(), containerId);
         this.blockPos = pos;
         this.level = entity.getLevel();
