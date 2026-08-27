@@ -66,6 +66,10 @@ public final class PowerBlock extends Block implements EntityBlock {
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof PowerBlockEntity entity) {
+            var chargingItem = entity.removeChargingItem();
+            if (!chargingItem.isEmpty()) {
+                popResource(level, pos, chargingItem);
+            }
             entity.returnStoredPokemonToOwners();
         }
         super.onRemove(state, level, pos, newState, movedByPiston);

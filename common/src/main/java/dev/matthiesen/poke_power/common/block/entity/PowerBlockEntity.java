@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.pokemon.OriginalTrainerType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
+import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyGenerator;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
@@ -16,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -52,6 +54,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
 
     private boolean isActive = false;
     private List<StoredPokemon> storedPokemon = new ArrayList<>();
+    private ItemStack chargingItem = ItemStack.EMPTY;
 
     public boolean insertPokemon(Pokemon pokemon, UUID ownerUuid) {
         if (storedPokemon.size() >= 6) return false;
@@ -75,6 +78,24 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
             pokemon.add(stored.pokemon());
         }
         return Collections.unmodifiableList(pokemon);
+    }
+
+    public ItemStack getChargingItem() {
+        return chargingItem;
+    }
+
+    public void setChargingItem(ItemStack stack) {
+        chargingItem = stack;
+        setChanged();
+    }
+
+    public ItemStack removeChargingItem() {
+        ItemStack removed = chargingItem;
+        chargingItem = ItemStack.EMPTY;
+        if (!removed.isEmpty()) {
+            setChanged();
+        }
+        return removed;
     }
 
     public boolean returnPokemonToOwner(int index) {
@@ -140,6 +161,9 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         super.loadAdditional(compoundTag, provider);
         CompoundTag nbt = compoundTag.getCompound("poke_power");
         this.isActive = nbt.getBoolean("isActive");
+        this.chargingItem = nbt.contains("chargingItem", Tag.TAG_COMPOUND)
+                ? ItemStack.parseOptional(provider, nbt.getCompound("chargingItem"))
+                : ItemStack.EMPTY;
         CompoundTag pokemonList = nbt.getCompound("storedPokemon");
         List<StoredPokemon> loadedStoredPokemon = new ArrayList<>();
         List<String> keys = new ArrayList<>(pokemonList.getAllKeys());
@@ -160,6 +184,9 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         super.saveAdditional(compoundTag, provider);
         CompoundTag nbt = new CompoundTag();
         nbt.putBoolean("isActive", this.isActive);
+        if (!chargingItem.isEmpty()) {
+            nbt.put("chargingItem", chargingItem.save(provider));
+        }
         CompoundTag pokemonList = new CompoundTag();
         for (int i = 0; i < storedPokemon.size(); i++) {
             StoredPokemon stored = storedPokemon.get(i);
@@ -202,8 +229,24 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         if (powerBlock.isActive && powerBlock.getActiveGenerationValue() > 0) {
             powerBlock.generator.generate(powerBlock.getActiveGenerationValue());
         }
+        powerBlock.chargeItemInSlot();
         powerBlock.generator.distributeEnergy(level, blockPos);
         setChanged(level, blockPos, blockState);
+    }
+
+    private void chargeItemInSlot() {
+        if (chargingItem.isEmpty()) return;
+        long available = generator.getEnergy();
+        if (available <= 0) return;
+
+        long maxTransfer = Math.min(available, generator.getMaxExtract());
+        if (maxTransfer <= 0) return;
+
+        long accepted = PokePowerCommon.POWER_TOOLS.chargeItem(chargingItem, maxTransfer);
+        if (accepted <= 0) return;
+
+        generator.setEnergy(available - accepted);
+        setChanged();
     }
 
     private static int storedPokemonIndex(String key) {
