@@ -1,0 +1,60 @@
+{
+  "parent": "poke_power:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "poke_power:power_cable"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_redstone_block": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:redstone_block"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_black_tumblestone": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "cobblemon:black_tumblestone"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_glass_pane": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:glass_pane"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+        "has_the_recipe",
+        "has_redstone_block",
+        "has_black_tumblestone",
+        "has_glass_pane"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "poke_power:power_cable"
+    ]
+  }
+}
