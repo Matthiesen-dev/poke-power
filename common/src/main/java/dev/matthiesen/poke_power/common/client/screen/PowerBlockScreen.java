@@ -1,11 +1,11 @@
 package dev.matthiesen.poke_power.common.client.screen;
 
+import dev.matthiesen.matthiesen_core.common.utility.EnergyUtilities;
 import dev.matthiesen.matthiesen_core.common.utility.ui.screen.AbstractSimpleScreen;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
-import dev.matthiesen.poke_power.common.util.EnergyUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -117,13 +117,13 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
 
                     Component.translatable("tooltip.poke_power.energy_bar.capacity")
                             .withStyle(style -> style.withBold(true).withColor(pctColor))
-                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtil.toEnergyString(capacity))
+                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtilities.toParsedString(capacity))
                                     .withStyle(style -> style.withBold(false).withColor(ChatFormatting.YELLOW))
                             ),
 
                     Component.translatable("tooltip.poke_power.energy_bar.stored")
                             .withStyle(style -> style.withBold(true).withColor(pctColor))
-                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtil.toEnergyString(energy))
+                            .append(Component.translatable("tooltip.poke_power.energy_bar.value", EnergyUtilities.toParsedString(energy))
                                     .withStyle(style -> style.withBold(false).withColor(ChatFormatting.YELLOW))
                             )
             ), mouseX, mouseY);

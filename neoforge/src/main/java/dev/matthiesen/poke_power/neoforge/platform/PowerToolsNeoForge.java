@@ -2,26 +2,29 @@ package dev.matthiesen.poke_power.neoforge.platform;
 
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
+import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyHelpers;
 import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyWrapper;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import java.util.function.Supplier;
 
 public final class PowerToolsNeoForge implements PowerTools {
+    private static final NeoForgeEnergyHelpers HELPERS = new NeoForgeEnergyHelpers();
+
     @Override
-    public void registerEnergyCapability(Supplier<BlockEntityType<?>> blockEntityTypeSupplier) {
+    public void registerBlockEntityEnergyCapability(Supplier<BlockEntityType<?>> supplier) {
         NeoForge.EVENT_BUS.addListener((RegisterCapabilitiesEvent event) -> event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
-                blockEntityTypeSupplier.get(),
+                supplier.get(),
                 (blockEntity, side) -> {
                     if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock && isPokePowerBlockEntity(blockEntity)) {
                         return new NeoForgeEnergyWrapper(energyBlock.getEnergyStorage());
@@ -32,52 +35,32 @@ public final class PowerToolsNeoForge implements PowerTools {
     }
 
     @Override
+    public void registerItemEnergyCapability(ItemLike... itemLikes) {
+        // Opt out
+    }
+
+    @Override
     public void distributeEnergy(AbstractCommonEnergyStorage storage, Level level, BlockPos pos) {
-        int availableEnergy = (int) storage.getEnergy();
-        int maxTransfer = Math.toIntExact(Math.min(availableEnergy, storage.getMaxExtract()));
-
-        for (Direction direction : Direction.values()) {
-            if (maxTransfer <= 0) break;
-
-            BlockPos neighborPos = pos.relative(direction);
-            IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, direction.getOpposite());
-
-            if (targetStorage != null && targetStorage.canReceive()) {
-                int accepted = targetStorage.receiveEnergy(maxTransfer, false);
-                if (accepted > 0) {
-                    storage.setEnergy(storage.getEnergy() - accepted);
-                    maxTransfer -= accepted;
-                }
-            }
-        }
+        HELPERS.distributeEnergy(storage, level, pos);
     }
 
     @Override
     public boolean supportsEnergyTransfer(Level level, BlockPos pos, Direction direction) {
-        BlockPos neighborPos = pos.relative(direction);
-        IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, direction.getOpposite());
-        return targetStorage != null && (targetStorage.canReceive() || targetStorage.canExtract());
+        return HELPERS.supportsEnergyTransfer(level, pos, direction);
     }
 
     @Override
     public long pushEnergyTo(long maxAmount, Level level, BlockPos targetPos, Direction fromSide) {
-        IEnergyStorage targetStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, targetPos, fromSide);
-        if (targetStorage == null || !targetStorage.canReceive()) return 0;
-        return targetStorage.receiveEnergy((int) Math.min(maxAmount, Integer.MAX_VALUE), false);
+        return HELPERS.pushEnergyTo(maxAmount, level, targetPos, fromSide);
     }
 
     @Override
     public boolean canChargeItem(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        return energyStorage != null && energyStorage.canReceive();
+        return HELPERS.canChargeItem(stack);
     }
 
     @Override
     public long chargeItem(ItemStack stack, long maxAmount) {
-        if (stack.isEmpty() || maxAmount <= 0) return 0;
-        IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (energyStorage == null || !energyStorage.canReceive()) return 0;
-        return energyStorage.receiveEnergy((int) Math.min(maxAmount, Integer.MAX_VALUE), false);
+        return HELPERS.chargeItem(stack, maxAmount);
     }
 }
