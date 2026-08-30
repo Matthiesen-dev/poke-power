@@ -20,6 +20,8 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(PokePowerCommon.MOD_ID, "textures/gui/power_generator.png");
+    private static final ResourceLocation ENERGY_BAR_TEXTURE =
+            new ResourceLocation(PokePowerCommon.MOD_ID, "textures/gui/power_generator_energy_bar.png");
 
     // Energy bar position within the texture (local to leftPos/topPos)
     private static final int ENERGY_X = 154;
@@ -58,10 +60,10 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
         // Section headers drawn in screen-local coords (relative to leftPos/topPos)
         graphics.drawString(font,
                 Component.translatable("container.poke_power.generator_slots"),
-                PowerBlockMenu.GEN_SLOT_X0, 8, 0x404040, false);
+                PowerBlockMenu.GEN_SLOT_X0 + 2, 11, 0x404040, false);
         graphics.drawString(font,
                 Component.translatable("container.poke_power.party_slots"),
-                PowerBlockMenu.PARTY_SLOT_X0, 44, 0x404040, false);
+                PowerBlockMenu.PARTY_SLOT_X0 + 2, 49, 0x404040, false);
     }
 
     @Override
@@ -142,7 +144,7 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
         int barYBottom = topPos + ENERGY_Y + 1 + ENERGY_H;
         int barYTop    = barYBottom - filledH;
         // Fill from the bottom up (like a fuel gauge)
-        graphics.fill(barX, barYTop, barX + ENERGY_W, barYBottom, 0xFF00BFFF);
+        graphics.blit(ENERGY_BAR_TEXTURE, barX, barYTop, 0, ENERGY_H - filledH, ENERGY_W, filledH, ENERGY_W, ENERGY_H);
     }
 
 }
