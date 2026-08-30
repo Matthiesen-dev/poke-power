@@ -44,8 +44,8 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     public static final int PARTY_SLOT_Y = 61;
 
     public static final int PLAYER_INV_X0 = 8;
-    public static final int PLAYER_INV_Y = 96;
-    public static final int HOTBAR_Y = 154;
+    public static final int PLAYER_INV_Y = 104;
+    public static final int HOTBAR_Y = 162;
 
     // Pixel positions for the charging container slot
     public static final int CHARGING_SLOT_X = 128;
@@ -61,7 +61,9 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     private static final int DATA_ENERGY_HI   = 1;
     private static final int DATA_CAPACITY_LO = 2;
     private static final int DATA_CAPACITY_HI = 3;
-    private static final int DATA_COUNT       = 4;
+    private static final int DATA_GEN_LO      = 4;
+    private static final int DATA_GEN_HI      = 5;
+    private static final int DATA_COUNT       = 6;
 
     private final SimpleContainer genContainer   = new SimpleContainer(GEN_SLOT_COUNT);
     private final SimpleContainer partyContainer = new SimpleContainer(PARTY_SLOT_COUNT);
@@ -141,6 +143,7 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
      */
     private long cachedEnergy   = 0;
     private long cachedCapacity = 0;
+    private long cachedGeneration = 0;
 
     private final ContainerData energyData = new ContainerData() {
         @Override
@@ -149,10 +152,12 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
             // Client: return cached values written by set().
             long energy   = cachedEnergy;
             long capacity = cachedCapacity;
+            long generation = cachedGeneration;
             if (level != null && !level.isClientSide() && blockPos != null) {
                 if (level.getBlockEntity(blockPos) instanceof PowerBlockEntity entity) {
                     energy   = entity.getEnergyStorage().getEnergy();
                     capacity = entity.getEnergyStorage().getCapacity();
+                    generation = entity.getActiveGenerationValue();
                 }
             }
             return switch (index) {
@@ -160,6 +165,8 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
                 case DATA_ENERGY_HI   -> (int) (energy   >> 16);
                 case DATA_CAPACITY_LO -> (int) (capacity & 0xFFFFL);
                 case DATA_CAPACITY_HI -> (int) (capacity >> 16);
+                case DATA_GEN_LO      -> (int) (generation & 0xFFFFL);
+                case DATA_GEN_HI      -> (int) (generation >> 16);
                 default -> 0;
             };
         }
@@ -174,6 +181,8 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
                 case DATA_ENERGY_HI   -> cachedEnergy   = (cachedEnergy   & 0x0000FFFFL) | ((long) bits << 16);
                 case DATA_CAPACITY_LO -> cachedCapacity = (cachedCapacity & 0xFFFF0000L) | bits;
                 case DATA_CAPACITY_HI -> cachedCapacity = (cachedCapacity & 0x0000FFFFL) | ((long) bits << 16);
+                case DATA_GEN_LO      -> cachedGeneration = (cachedGeneration & 0xFFFF0000L) | bits;
+                case DATA_GEN_HI      -> cachedGeneration = (cachedGeneration & 0x0000FFFFL) | ((long) bits << 16);
             }
         }
 
@@ -185,6 +194,8 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     public long getSyncedEnergy()   { return cachedEnergy; }
     /** Returns the client-side cached capacity (valid on both sides after sync). */
     public long getSyncedCapacity() { return cachedCapacity; }
+    /** Returns the client-side cached active generation rate (FE/t). */
+    public long getSyncedGeneration() { return cachedGeneration; }
 
     /** Client-side constructor — registered in {@link MenuRegistry}. */
     public PowerBlockMenu(int containerId, Inventory inv) {
