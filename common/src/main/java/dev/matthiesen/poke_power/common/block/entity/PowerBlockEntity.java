@@ -50,7 +50,37 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
             .thenLoop("animation.power_block.active");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private final PokeEnergyGenerator generator = new PokeEnergyGenerator(120000L, 16000L);
+    private final PokeEnergyGenerator generator;
+
+    public PowerBlockEntity(BlockPos blockPos, BlockState blockState) {
+        super(BlockEntityRegistry.POWER_BLOCK_BE.get(), blockPos, blockState);
+        generator = new PokeEnergyGenerator(getConfigCapacity(), getConfigMaxExtract());
+    }
+
+    private long getConfigCapacity() {
+        return PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_capacity.get();
+    }
+
+    private long getConfigMaxExtract() {
+        return PokePowerConfig.SERVER_CONFIG.blocks_powerMax_extract.get();
+    }
+
+    private int tickCounter = 0;
+    private static final int TICKS_PER_CONFIG_CHECK = 20 * 60; // Check every 60 seconds
+
+    private void verifyEnergyStorageFromConfig() {
+        if (tickCounter >= TICKS_PER_CONFIG_CHECK) {
+            long configCapacity = getConfigCapacity();
+            long configMaxExtract = getConfigMaxExtract();
+            if (generator.getCapacity() != configCapacity || generator.getMaxExtract() != configMaxExtract) {
+                generator.setCapacity(configCapacity);
+                generator.setMaxExtract(configMaxExtract);
+            }
+            tickCounter = 0;
+            return;
+        }
+        tickCounter++;
+    }
 
     private boolean isActive = false;
     private List<StoredPokemon> storedPokemon = new ArrayList<>();
@@ -136,10 +166,6 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         return new SyncGeneratorPayload(containerId, getBlockPos(), genItems, partyItems);
     }
 
-    public PowerBlockEntity(BlockPos blockPos, BlockState blockState) {
-        super(BlockEntityRegistry.POWER_BLOCK_BE.get(), blockPos, blockState);
-    }
-
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "controller", 0, state ->
@@ -217,6 +243,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     public static <T extends BlockEntity> void tick(Level level, BlockPos blockPos, BlockState blockState, T blockEntity) {
         if (!(blockEntity instanceof PowerBlockEntity powerBlock)) return;
         if (level.isClientSide) return;
+        powerBlock.verifyEnergyStorageFromConfig();
 
         // Auto-drive isActive from whether any pokemon are stored
         boolean shouldBeActive = !powerBlock.storedPokemon.isEmpty();
