@@ -67,31 +67,31 @@ public final class PokeUtil {
         return components.toArray(new Component[0]);
     }
 
-    private String getPowerPerTick() {
-        String format = "%s FE/t";
-        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
-        int power = pokemon.getLevel() * powerPerPokeLevel;
-        return String.format(format, power);
+    private int getPowerPerTick() {
+        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
+        return pokemon.getLevel() * powerPerPokeLevel;
     }
 
     private Component[] getLore() {
         String pokeball = pokemon.getCaughtBall().item().getDefaultInstance().getDisplayName().getString();
         String level = String.valueOf(pokemon.getLevel());
-        String nickname = pokemon.getNickname() != null ? pokemon.getNickname().getString() : "No nickname";
+        MutableComponent nicknameComponent = pokemon.getNickname() != null ?
+                Component.literal(pokemon.getNickname().toString()) :
+                Component.translatable("tooltip.poke_power.pokemon.nickname.none");
 
         List<Component> pokeLore = new ArrayList<>();
 
         pokeLore.add(Component.literal(pokeball).setStyle(Style.EMPTY.withItalic(true)
                 .withColor(ChatFormatting.DARK_GRAY)));
-        pokeLore.add(Component.literal("Level: ").withStyle(ChatFormatting.AQUA)
+        pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.level").withStyle(ChatFormatting.AQUA)
                 .append(Component.literal(level).withStyle(ChatFormatting.WHITE)));
-        pokeLore.add(Component.literal("Nickname: ").withStyle(ChatFormatting.DARK_GREEN)
-                .append(Component.literal(nickname).withStyle(ChatFormatting.WHITE)));
+        pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.nickname").withStyle(ChatFormatting.DARK_GREEN)
+                .append(nicknameComponent.withStyle(ChatFormatting.WHITE)));
 
         pokeLore.add(Component.empty());
 
-        pokeLore.add(Component.literal("Power Generation: ").withStyle(ChatFormatting.YELLOW)
-                .append(Component.literal(getPowerPerTick()).withStyle(ChatFormatting.WHITE)));
+        pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.power-gen").withStyle(ChatFormatting.YELLOW)
+                .append(Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value", getPowerPerTick()).withStyle(ChatFormatting.WHITE)));
 
         return buildComponentList(pokeLore);
     }

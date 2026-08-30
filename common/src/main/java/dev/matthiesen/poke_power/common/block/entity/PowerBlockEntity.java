@@ -62,7 +62,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     }
 
     private long getConfigMaxExtract() {
-        return PokePowerConfig.SERVER_CONFIG.blocks_powerMax_extract.get();
+        return PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_maxExtract.get();
     }
 
     private int tickCounter = 0;
@@ -97,7 +97,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         if (!isActive) return 0;
         long totalGeneration = 0;
         for (StoredPokemon stored : storedPokemon) {
-            totalGeneration += (long) stored.pokemon().getLevel() * PokePowerConfig.SERVER_CONFIG.powerPerPokeLevel.getAsInt();
+            totalGeneration += (long) stored.pokemon().getLevel() * PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
         }
         return totalGeneration;
     }
