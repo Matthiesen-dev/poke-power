@@ -41,7 +41,7 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     public static final int GEN_SLOT_X0 = 9;
     public static final int GEN_SLOT_Y = 23;
     public static final int PARTY_SLOT_X0 = 9;
-    public static final int PARTY_SLOT_Y = 57;
+    public static final int PARTY_SLOT_Y = 61;
 
     public static final int PLAYER_INV_X0 = 8;
     public static final int PLAYER_INV_Y = 96;
