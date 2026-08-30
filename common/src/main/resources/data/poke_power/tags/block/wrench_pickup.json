@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "poke_power:power_block",
+    "poke_power:power_cable"
+  ]
+}
