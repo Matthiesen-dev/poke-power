@@ -67,6 +67,11 @@ public final class PokeUtil {
         return components.toArray(new Component[0]);
     }
 
+    public static int getPowerPerTick(int level) {
+        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
+        return level * powerPerPokeLevel;
+    }
+
     private int getPowerPerTick() {
         int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
         return pokemon.getLevel() * powerPerPokeLevel;

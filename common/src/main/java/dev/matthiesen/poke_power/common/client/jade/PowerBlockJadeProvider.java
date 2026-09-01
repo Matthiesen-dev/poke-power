@@ -1,8 +1,7 @@
 package dev.matthiesen.poke_power.common.client.jade;
 
-import dev.matthiesen.matthiesen_core.common.utility.EnergyUtilities;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
-import dev.matthiesen.poke_power.common.config.PokePowerConfig;
+import dev.matthiesen.poke_power.common.util.EnergyUtils;
 import dev.matthiesen.poke_power.common.util.PokeUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -27,7 +26,6 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
     private static final String POKE_PROPERTY_PREFIX = "poke_property_";
     private static final String POKE_PROPERTY_LEVEL_PREFIX = "poke_property_level_";
     private static final String TOTAL_ENERGY_PER_TICK = "total_energy_per_tick";
-    private static final long MIN_FORMATTABLE_ENERGY = 1L;
 
     @Override
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
@@ -50,8 +48,8 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
 
                 if (serverData.contains(POKE_PROPERTY_LEVEL_PREFIX + index, Tag.TAG_INT)) {
                     int level = serverData.getInt(POKE_PROPERTY_LEVEL_PREFIX + index);
-                    var energyPerLevel = getPowerPerTick(level);
-                    var formattedEnergy = formatEnergyValueSafe(energyPerLevel);
+                    var energyPerLevel = PokeUtil.getPowerPerTick(level);
+                    var formattedEnergy = EnergyUtils.formatEnergyValueSafe(energyPerLevel);
                     iTooltip.append(Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.jade.pokemon", formattedEnergy).withStyle(ChatFormatting.GRAY));
                 }
 
@@ -62,11 +60,11 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
         if (serverData.contains(TOTAL_ENERGY_PER_TICK, Tag.TAG_LONG)) {
             long totalEnergyPerTick = serverData.getLong(TOTAL_ENERGY_PER_TICK);
 
-            ChatFormatting generationColor = totalEnergyPerTick < MIN_FORMATTABLE_ENERGY
+            ChatFormatting generationColor = totalEnergyPerTick < EnergyUtils.MIN_FORMATTABLE_ENERGY
                     ? ChatFormatting.RED
                     : ChatFormatting.YELLOW;
 
-            String formattedEnergy = formatEnergyValueSafe(totalEnergyPerTick);
+            String formattedEnergy = EnergyUtils.formatEnergyValueSafe(totalEnergyPerTick);
             iTooltip.add(Component.translatable("tooltip.poke_power.pokemon.power-gen.jade").withStyle(ChatFormatting.GRAY).append(
                     Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value", formattedEnergy).withStyle(generationColor)
             ));
@@ -97,14 +95,5 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
     @Override
     public ResourceLocation getUid() {
         return PokePowerJadePlugin.POKE_POWER_BLOCK;
-    }
-
-    private static String formatEnergyValueSafe(long value) {
-        return value < MIN_FORMATTABLE_ENERGY ? "0" : EnergyUtilities.toParsedString(value);
-    }
-
-    private int getPowerPerTick(int level) {
-        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
-        return level * powerPerPokeLevel;
     }
 }
