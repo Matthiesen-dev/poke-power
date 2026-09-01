@@ -67,7 +67,7 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
                     : ChatFormatting.YELLOW;
 
             String formattedEnergy = formatEnergyValueSafe(totalEnergyPerTick);
-            iTooltip.add(Component.translatable("tooltip.poke_power.pokemon.power-gen-short").withStyle(ChatFormatting.GRAY).append(
+            iTooltip.add(Component.translatable("tooltip.poke_power.pokemon.power-gen.jade").withStyle(ChatFormatting.GRAY).append(
                     Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value", formattedEnergy).withStyle(generationColor)
             ));
         }
