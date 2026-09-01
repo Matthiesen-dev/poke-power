@@ -33,6 +33,18 @@ public final class PowerBlock extends Block implements EntityBlock {
         );
     }
 
+    private static final int MAX_POKEMON_STORAGE = 6;
+    private static final int MAX_REDSTONE_SIGNAL = 15;
+
+    private int calculateRedstoneSignal(PowerBlockEntity entity) {
+        int storedPokemonCount = entity.getStoredPokemonCount();
+        if (storedPokemonCount == 0) {
+            return 0;
+        }
+        // Scale the redstone signal based on the number of stored Pokémon
+        return (int) Math.ceil((double) storedPokemonCount / MAX_POKEMON_STORAGE * MAX_REDSTONE_SIGNAL);
+    }
+
     @Override
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
@@ -51,6 +63,19 @@ public final class PowerBlock extends Block implements EntityBlock {
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof PowerBlockEntity entity) {
+            return calculateRedstoneSignal(entity);
+        }
+        return 0;
     }
 
     @Override
