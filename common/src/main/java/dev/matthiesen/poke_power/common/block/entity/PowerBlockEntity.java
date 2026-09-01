@@ -86,10 +86,15 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     private List<StoredPokemon> storedPokemon = new ArrayList<>();
     private ItemStack chargingItem = ItemStack.EMPTY;
 
+    public int getStoredPokemonCount() {
+        return storedPokemon.size();
+    }
+
     public boolean insertPokemon(Pokemon pokemon, UUID ownerUuid) {
         if (storedPokemon.size() >= 6) return false;
         if (!pokemon.getPrimaryType().equals(ElementalTypes.ELECTRIC)) return false;
         storedPokemon.add(new StoredPokemon(pokemon, ownerUuid));
+        notifyComparatorUpdate();
         return true;
     }
 
@@ -138,6 +143,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         if (!party.add(stored.pokemon())) return false;
 
         storedPokemon.remove(index);
+        notifyComparatorUpdate();
         return true;
     }
 
@@ -274,6 +280,12 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
 
         generator.setEnergy(available - accepted);
         setChanged();
+    }
+
+    private void notifyComparatorUpdate() {
+        if (level != null && !level.isClientSide) {
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        }
     }
 
     private static int storedPokemonIndex(String key) {
