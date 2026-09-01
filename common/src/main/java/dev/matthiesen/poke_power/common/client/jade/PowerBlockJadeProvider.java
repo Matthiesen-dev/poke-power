@@ -1,9 +1,12 @@
 package dev.matthiesen.poke_power.common.client.jade;
 
+import dev.matthiesen.matthiesen_core.common.utility.EnergyUtilities;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
 import dev.matthiesen.poke_power.common.util.PokeUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -20,6 +23,8 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
     INSTANCE;
 
     private static final String POKE_PROPERTY_PREFIX = "poke_property_";
+    private static final String TOTAL_ENERGY_PER_TICK = "total_energy_per_tick";
+    private static final long MIN_FORMATTABLE_ENERGY = 1L;
 
     @Override
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
@@ -37,6 +42,17 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
             }
             index++;
         }
+
+        if (serverData.contains(TOTAL_ENERGY_PER_TICK, Tag.TAG_LONG)) {
+            long totalEnergyPerTick = serverData.getLong(TOTAL_ENERGY_PER_TICK);
+
+            ChatFormatting generationColor = totalEnergyPerTick < MIN_FORMATTABLE_ENERGY
+                    ? ChatFormatting.RED
+                    : ChatFormatting.YELLOW;
+
+            String formattedEnergy = formatEnergyValueSafe(totalEnergyPerTick);
+            iTooltip.add(Component.translatableEscape("tooltip.poke_power.jade.power-gen", formattedEnergy).withStyle(generationColor));
+        }
     }
 
     @Override
@@ -49,11 +65,17 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
                 Tag itemTag = item.save(serverLevel.registryAccess());
                 compoundTag.put(POKE_PROPERTY_PREFIX + i, itemTag);
             }
+
+            compoundTag.putLong(TOTAL_ENERGY_PER_TICK, powerBlock.getActiveGenerationValue());
         }
     }
 
     @Override
     public ResourceLocation getUid() {
         return PokePowerJadePlugin.POKE_POWER_BLOCK;
+    }
+
+    private static String formatEnergyValueSafe(long value) {
+        return value < MIN_FORMATTABLE_ENERGY ? "0" : EnergyUtilities.toParsedString(value);
     }
 }
