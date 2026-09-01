@@ -11,21 +11,27 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class CableBlock extends Block implements EntityBlock {
+public final class CableBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     private static final EnumProperty<ConnectionType> NORTH = EnumProperty.create("north", ConnectionType.class);
     private static final EnumProperty<ConnectionType> SOUTH = EnumProperty.create("south", ConnectionType.class);
     private static final EnumProperty<ConnectionType> EAST = EnumProperty.create("east", ConnectionType.class);
@@ -49,19 +55,22 @@ public final class CableBlock extends Block implements EntityBlock {
                         .requiresCorrectToolForDrops()
         );
         // Default state is a floating pipe center with no arms connected
-        this.registerDefaultState(this.stateDefinition.any()
+        this.registerDefaultState(
+                this.stateDefinition.any()
                 .setValue(NORTH, ConnectionType.NONE)
                 .setValue(SOUTH, ConnectionType.NONE)
                 .setValue(EAST, ConnectionType.NONE)
                 .setValue(WEST, ConnectionType.NONE)
                 .setValue(UP, ConnectionType.NONE)
-                .setValue(DOWN, ConnectionType.NONE));
+                .setValue(DOWN, ConnectionType.NONE)
+                .setValue(WATERLOGGED, false)
+        );
     }
 
     // Define the properties this block uses
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(NORTH, SOUTH, EAST, WEST, UP, DOWN);
+        builder.add(NORTH, SOUTH, EAST, WEST, UP, DOWN, WATERLOGGED);
     }
 
     // Sets the initial connection states when the player places the block
@@ -75,6 +84,7 @@ public final class CableBlock extends Block implements EntityBlock {
         ConnectionType westType = getConnectionType(level, pos, Direction.WEST);
         ConnectionType upType = getConnectionType(level, pos, Direction.UP);
         ConnectionType downType = getConnectionType(level, pos, Direction.DOWN);
+        FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
 
         return this.defaultBlockState()
                 .setValue(NORTH, northType)
@@ -82,12 +92,21 @@ public final class CableBlock extends Block implements EntityBlock {
                 .setValue(EAST, eastType)
                 .setValue(WEST, westType)
                 .setValue(UP, upType)
-                .setValue(DOWN, downType);
+                .setValue(DOWN, downType)
+                .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
+    }
+
+    @Override
+    protected @NotNull FluidState getFluidState(BlockState blockState) {
+        return blockState.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(blockState);
     }
 
     // Updates connections automatically when a neighboring block changes or gets broken
     @Override
     public @NotNull BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+        if (state.getValue(WATERLOGGED)) {
+            level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
         return state.setValue(getPropertyForDirection(direction), getConnectionType(level, currentPos, direction));
     }
 
