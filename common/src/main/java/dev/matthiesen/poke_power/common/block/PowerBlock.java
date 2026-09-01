@@ -45,8 +45,6 @@ public final class PowerBlock extends Block implements EntityBlock {
         return (int) Math.ceil((double) storedPokemonCount / MAX_POKEMON_STORAGE * MAX_REDSTONE_SIGNAL);
     }
 
-
-
     @Override
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
