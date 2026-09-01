@@ -52,7 +52,7 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
                     int level = serverData.getInt(POKE_PROPERTY_LEVEL_PREFIX + index);
                     var energyPerLevel = getPowerPerTick(level);
                     var formattedEnergy = formatEnergyValueSafe(energyPerLevel);
-                    iTooltip.append(Component.literal(" (" + formattedEnergy + " FE/t)").withStyle(ChatFormatting.GRAY));
+                    iTooltip.append(Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.jade.pokemon", formattedEnergy).withStyle(ChatFormatting.GRAY));
                 }
 
             }
