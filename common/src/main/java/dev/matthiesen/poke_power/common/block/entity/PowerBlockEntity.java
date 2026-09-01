@@ -54,32 +54,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
 
     public PowerBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(BlockEntityRegistry.POWER_BLOCK_BE.get(), blockPos, blockState);
-        generator = new PokeEnergyGenerator(getConfigCapacity(), getConfigMaxExtract());
-    }
-
-    private long getConfigCapacity() {
-        return PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_capacity.get();
-    }
-
-    private long getConfigMaxExtract() {
-        return PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_maxExtract.get();
-    }
-
-    private int tickCounter = 0;
-    private static final int TICKS_PER_CONFIG_CHECK = 20 * 60; // Check every 60 seconds
-
-    private void verifyEnergyStorageFromConfig() {
-        if (tickCounter >= TICKS_PER_CONFIG_CHECK) {
-            long configCapacity = getConfigCapacity();
-            long configMaxExtract = getConfigMaxExtract();
-            if (generator.getCapacity() != configCapacity || generator.getMaxExtract() != configMaxExtract) {
-                generator.setCapacity(configCapacity);
-                generator.setMaxExtract(configMaxExtract);
-            }
-            tickCounter = 0;
-            return;
-        }
-        tickCounter++;
+        generator = new PokeEnergyGenerator();
     }
 
     private boolean isActive = false;
@@ -249,7 +224,6 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     public static <T extends BlockEntity> void tick(Level level, BlockPos blockPos, BlockState blockState, T blockEntity) {
         if (!(blockEntity instanceof PowerBlockEntity powerBlock)) return;
         if (level.isClientSide) return;
-        powerBlock.verifyEnergyStorageFromConfig();
 
         // Auto-drive isActive from whether any pokemon are stored
         boolean shouldBeActive = !powerBlock.storedPokemon.isEmpty();

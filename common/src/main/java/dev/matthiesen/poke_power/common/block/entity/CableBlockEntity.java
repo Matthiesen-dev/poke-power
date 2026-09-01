@@ -4,7 +4,6 @@ import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStor
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.CableBlock;
-import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyCable;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
@@ -28,7 +27,7 @@ public final class CableBlockEntity extends AbstractEnergyBlockEntity {
 
     public CableBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(BlockEntityRegistry.POWER_CABLE_BE.get(), blockPos, blockState);
-        energyStorage = new PokeEnergyCable(getConfigCapacity(), getConfigMaxExtract());
+        energyStorage = new PokeEnergyCable();
     }
 
     @Override
@@ -36,35 +35,9 @@ public final class CableBlockEntity extends AbstractEnergyBlockEntity {
         return energyStorage;
     }
 
-    private long getConfigCapacity() {
-        return PokePowerConfig.SERVER_CONFIG.blocks_cable_capacity.get();
-    }
-
-    private long getConfigMaxExtract() {
-        return PokePowerConfig.SERVER_CONFIG.blocks_cable_maxExtract.get();
-    }
-
-    private int tickCounter = 0;
-    private static final int TICKS_PER_CONFIG_CHECK = 20 * 60; // Check every 60 seconds
-
-    private void verifyEnergyStorageFromConfig() {
-        if (tickCounter >= TICKS_PER_CONFIG_CHECK) {
-            long configCapacity = getConfigCapacity();
-            long configMaxExtract = getConfigMaxExtract();
-            if (energyStorage.getCapacity() != configCapacity || energyStorage.getMaxExtract() != configMaxExtract) {
-                energyStorage.setCapacity(configCapacity);
-                energyStorage.setMaxExtract(configMaxExtract);
-            }
-            tickCounter = 0;
-            return;
-        }
-        tickCounter++;
-    }
-
     public static <T extends BlockEntity> void tick(Level level, BlockPos blockPos, BlockState blockState, T blockEntity) {
         if (!(blockEntity instanceof CableBlockEntity cable)) return;
         if (level.isClientSide) return;
-        cable.verifyEnergyStorageFromConfig();
 
         long available = cable.energyStorage.getEnergy();
         if (available <= 0) {

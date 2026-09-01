@@ -6,6 +6,7 @@ import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.menu.PowerBlockMenu;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
+import dev.matthiesen.poke_power.common.util.EnergyUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,6 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
     private static final int ENERGY_Y = 22;
     private static final int ENERGY_W = 12; // interior width (bar itself, inside the 14px frame)
     private static final int ENERGY_H = 50; // interior height
-    private static final long MIN_FORMATTABLE_ENERGY = 1L;
 
     public PowerBlockScreen(PowerBlockMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -71,14 +71,14 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
         graphics.pose().scale(generationScale, generationScale, 1.0F);
         long generation = getMenu().getSyncedGeneration();
 
-        ChatFormatting generationColor = generation < MIN_FORMATTABLE_ENERGY
+        ChatFormatting generationColor = generation < EnergyUtils.MIN_FORMATTABLE_ENERGY
                 ? ChatFormatting.RED
                 : ChatFormatting.YELLOW;
 
         graphics.drawString(font,
                 Component.translatable(
                         "container.poke_power.current_generation",
-                        formatEnergyValueSafe(generation)
+                        EnergyUtils.formatEnergyValueSafe(generation)
                 ).withStyle(generationColor),
                 Math.round(18 / generationScale), Math.round(89 / generationScale), 0x404040, false);
         graphics.pose().popPose();
@@ -163,10 +163,6 @@ public final class PowerBlockScreen extends AbstractSimpleScreen<PowerBlockMenu>
         int barYTop    = barYBottom - filledH;
         // Fill from the bottom up (like a fuel gauge)
         graphics.blit(ENERGY_BAR_TEXTURE, barX, barYTop, 0, ENERGY_H - filledH, ENERGY_W, filledH, ENERGY_W, ENERGY_H);
-    }
-
-    private static String formatEnergyValueSafe(long value) {
-        return value < MIN_FORMATTABLE_ENERGY ? "0" : EnergyUtilities.toParsedString(value);
     }
 
 }
