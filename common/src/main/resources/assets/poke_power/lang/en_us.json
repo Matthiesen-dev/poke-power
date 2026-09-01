@@ -15,6 +15,8 @@
   "tooltip.poke_power.pokemon.nickname.none": "No nickname",
   "tooltip.poke_power.pokemon.power-gen": "Power Generation: ",
   "tooltip.poke_power.pokemon.power-gen.value": "%s FE/t",
+  "tooltip.poke_power.pokemon.power-gen.jade": "Total Generation: ",
+  "tooltip.poke_power.pokemon.power-gen.jade.pokemon": " (%s FE/t)",
 
   "poke_power.configuration.title": "Poke Power Configuration",
   "poke_power.configuration.section.poke.power.server.toml": "Server Config",
