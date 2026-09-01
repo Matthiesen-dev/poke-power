@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class CableBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     private static final EnumProperty<ConnectionType> NORTH = EnumProperty.create("north", ConnectionType.class);
     private static final EnumProperty<ConnectionType> SOUTH = EnumProperty.create("south", ConnectionType.class);
     private static final EnumProperty<ConnectionType> EAST = EnumProperty.create("east", ConnectionType.class);
@@ -45,8 +46,6 @@ public final class CableBlock extends Block implements EntityBlock, SimpleWaterl
     private static final VoxelShape WEST_SHAPE = Block.box(0, 6, 6, 6, 10, 10);
     private static final VoxelShape UP_SHAPE = Block.box(6, 10, 6, 10, 16, 10);
     private static final VoxelShape DOWN_SHAPE = Block.box(6, 0, 6, 10, 6, 10);
-
-    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     public CableBlock() {
         super(
