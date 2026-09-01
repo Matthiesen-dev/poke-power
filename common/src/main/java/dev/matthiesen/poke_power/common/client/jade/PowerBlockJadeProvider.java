@@ -2,6 +2,7 @@ package dev.matthiesen.poke_power.common.client.jade;
 
 import dev.matthiesen.matthiesen_core.common.utility.EnergyUtilities;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
+import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.util.PokeUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -22,7 +23,9 @@ import snownee.jade.api.ui.IElementHelper;
 public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
     INSTANCE;
 
+    private static final String HAS_POKEMON = "has_pokemon";
     private static final String POKE_PROPERTY_PREFIX = "poke_property_";
+    private static final String POKE_PROPERTY_LEVEL_PREFIX = "poke_property_level_";
     private static final String TOTAL_ENERGY_PER_TICK = "total_energy_per_tick";
     private static final long MIN_FORMATTABLE_ENERGY = 1L;
 
@@ -30,6 +33,11 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         var serverData = blockAccessor.getServerData();
         var registryAccess = blockAccessor.getLevel().registryAccess();
+
+        if (serverData.getBoolean(HAS_POKEMON)) {
+            iTooltip.add(Component.literal("Contained Pokemon:").withStyle(ChatFormatting.GRAY));
+        }
+
         int index = 0;
         while (serverData.contains(POKE_PROPERTY_PREFIX + index, Tag.TAG_COMPOUND)) {
             var itemTag = serverData.getCompound(POKE_PROPERTY_PREFIX + index);
@@ -38,7 +46,15 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
                 IElementHelper elements = IElementHelper.get();
                 IElement icon = elements.item(item, 0.5f).size(new Vec2(10, 10)).translate(new Vec2(0, -1));
                 iTooltip.add(icon);
-                iTooltip.append(item.getHoverName().copy());
+                iTooltip.append(Component.literal(" ").append(item.getHoverName().copy().withStyle(ChatFormatting.WHITE)));
+
+                if (serverData.contains(POKE_PROPERTY_LEVEL_PREFIX + index, Tag.TAG_INT)) {
+                    int level = serverData.getInt(POKE_PROPERTY_LEVEL_PREFIX + index);
+                    var energyPerLevel = getPowerPerTick(level);
+                    var formattedEnergy = formatEnergyValueSafe(energyPerLevel);
+                    iTooltip.append(Component.literal(" (" + formattedEnergy + " FE/t)").withStyle(ChatFormatting.GRAY));
+                }
+
             }
             index++;
         }
@@ -51,7 +67,9 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
                     : ChatFormatting.YELLOW;
 
             String formattedEnergy = formatEnergyValueSafe(totalEnergyPerTick);
-            iTooltip.add(Component.translatableEscape("tooltip.poke_power.jade.power-gen", formattedEnergy).withStyle(generationColor));
+            iTooltip.add(Component.translatable("tooltip.poke_power.pokemon.power-gen-short").withStyle(ChatFormatting.GRAY).append(
+                    Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value", formattedEnergy).withStyle(generationColor)
+            ));
         }
     }
 
@@ -59,12 +77,18 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
     public void appendServerData(CompoundTag compoundTag, BlockAccessor blockAccessor) {
         if (!(blockAccessor.getLevel() instanceof ServerLevel serverLevel)) return;
         if (blockAccessor.getBlockEntity() instanceof PowerBlockEntity powerBlock) {
+            boolean hasPokemon = false;
+
             var pokemonList = powerBlock.getStoredPokemon();
             for (int i = 0; i < pokemonList.size(); i++) {
                 ItemStack item = new PokeUtil(pokemonList.get(i)).toItem();
                 Tag itemTag = item.save(serverLevel.registryAccess());
                 compoundTag.put(POKE_PROPERTY_PREFIX + i, itemTag);
+                compoundTag.putInt(POKE_PROPERTY_LEVEL_PREFIX + i, pokemonList.get(i).getLevel());
+                hasPokemon = true;
             }
+
+            compoundTag.putBoolean(HAS_POKEMON, hasPokemon);
 
             compoundTag.putLong(TOTAL_ENERGY_PER_TICK, powerBlock.getActiveGenerationValue());
         }
@@ -77,5 +101,10 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
 
     private static String formatEnergyValueSafe(long value) {
         return value < MIN_FORMATTABLE_ENERGY ? "0" : EnergyUtilities.toParsedString(value);
+    }
+
+    private int getPowerPerTick(int level) {
+        int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
+        return level * powerPerPokeLevel;
     }
 }
