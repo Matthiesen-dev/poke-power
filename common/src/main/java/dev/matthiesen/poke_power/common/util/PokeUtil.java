@@ -1,5 +1,6 @@
 package dev.matthiesen.poke_power.common.util;
 
+import com.cobblemon.mod.common.api.types.ElementalTypes;
 import com.cobblemon.mod.common.item.PokemonItem;
 import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -51,7 +52,7 @@ public final class PokeUtil {
         return switch (gender) {
             case MALE -> "♂";
             case FEMALE -> "♀";
-            case GENDERLESS -> "○";
+            case GENDERLESS -> "";
         };
     }
 
@@ -70,6 +71,11 @@ public final class PokeUtil {
     public static int getPowerPerTick(int level) {
         int powerPerPokeLevel = PokePowerConfig.SERVER_CONFIG.blocks_powerBlock_powerPerPokeLevel.getAsInt();
         return level * powerPerPokeLevel;
+    }
+
+    public static boolean isNotAllowedToGeneratePower(Pokemon pokemon) {
+        return !pokemon.getPrimaryType().equals(ElementalTypes.ELECTRIC)
+                && (pokemon.getSecondaryType() == null || !pokemon.getSecondaryType().equals(ElementalTypes.ELECTRIC));
     }
 
     private int getPowerPerTick() {
@@ -95,8 +101,14 @@ public final class PokeUtil {
 
         pokeLore.add(Component.empty());
 
-        pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.power-gen").withStyle(ChatFormatting.YELLOW)
-                .append(Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value", getPowerPerTick()).withStyle(ChatFormatting.WHITE)));
+        if (isNotAllowedToGeneratePower(pokemon)) {
+            pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.power-gen.not-allowed").withStyle(ChatFormatting.RED));
+        } else {
+            pokeLore.add(Component.translatable("tooltip.poke_power.pokemon.power-gen").withStyle(ChatFormatting.YELLOW)
+                    .append(Component.translatableEscape("tooltip.poke_power.pokemon.power-gen.value",
+                            EnergyUtils.formatEnergyValueSafe(getPowerPerTick())).withStyle(ChatFormatting.WHITE)));
+        }
+
 
         return buildComponentList(pokeLore);
     }

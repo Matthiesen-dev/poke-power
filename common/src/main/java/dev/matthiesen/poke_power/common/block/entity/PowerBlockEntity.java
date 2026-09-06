@@ -1,7 +1,6 @@
 package dev.matthiesen.poke_power.common.block.entity;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.types.ElementalTypes;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.OriginalTrainerType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -67,7 +66,7 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
 
     public boolean insertPokemon(Pokemon pokemon, UUID ownerUuid) {
         if (storedPokemon.size() >= 6) return false;
-        if (!pokemon.getPrimaryType().equals(ElementalTypes.ELECTRIC)) return false;
+        if (PokeUtil.isNotAllowedToGeneratePower(pokemon)) return false;
         storedPokemon.add(new StoredPokemon(pokemon, ownerUuid));
         notifyComparatorUpdate();
         return true;
