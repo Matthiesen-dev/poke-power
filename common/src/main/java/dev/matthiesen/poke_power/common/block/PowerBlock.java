@@ -13,17 +13,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class PowerBlock extends Block implements EntityBlock {
+    private static final BooleanProperty ACTIVE_SPIN_MODEL = BooleanProperty.create("activespinnermodel");
+
     public PowerBlock() {
         super(
                 BlockBehaviour.Properties.of()
@@ -31,6 +34,15 @@ public final class PowerBlock extends Block implements EntityBlock {
                         .strength(4f)
                         .requiresCorrectToolForDrops()
         );
+        this.registerDefaultState(
+                this.stateDefinition.any()
+                        .setValue(ACTIVE_SPIN_MODEL, false)
+        );
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(ACTIVE_SPIN_MODEL);
     }
 
     private static final int MAX_POKEMON_STORAGE = 6;
@@ -81,11 +93,6 @@ public final class PowerBlock extends Block implements EntityBlock {
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
         return BlockEntityRegistry.POWER_BLOCK_BE.get().create(blockPos, blockState);
-    }
-
-    @Override
-    protected @NotNull RenderShape getRenderShape(BlockState blockState) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

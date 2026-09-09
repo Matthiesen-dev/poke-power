@@ -2,6 +2,12 @@
   "variants": {
     "": {
       "model": "poke_power:block/power_block"
+    },
+    "activespinnermodel=false": {
+      "model": "poke_power:block/power_block"
+    },
+    "activespinnermodel=true": {
+      "model": "poke_power:block/power_block_active"
     }
   }
 }
