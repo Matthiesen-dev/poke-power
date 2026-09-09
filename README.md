@@ -3,7 +3,6 @@
 <div>
   <img src="https://mods.matthiesen.dev/badges/matthiesenCore.svg" alt="Matthiesen Core">
   <img src="https://mods.matthiesen.dev/badges/cobblemon.svg" alt="Cobblemon">
-  <img src="https://mods.matthiesen.dev/badges/geckolib.svg" alt="GeckoLib">
 </div>
 
 Cobblemon Poke Power is a simple mod that adds a new block to your Cobblemon world: The Poke Power Block. This block allows you
@@ -14,7 +13,6 @@ the energy cables from any mod that supports Forge Energy or Fabric Energy. Then
 
 - [Matthiesen Core](https://modrinth.com/mod/matthiesen-core)
 - [Cobblemon](https://modrinth.com/mod/cobblemon)
-- [GeckoLib](https://modrinth.com/mod/geckolib)
 - [Fabric API](https://modrinth.com/mod/fabric-api) (Fabric only)
 - [Forge Config API Port](https://modrinth.com/mod/forge-config-api-port) (Fabric only)
 
