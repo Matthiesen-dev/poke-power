@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "activemodel=false": {
       "model": "poke_power:block/power_block"
+    },
+    "activemodel=true": {
+      "model": "poke_power:block/power_block_active"
     }
   }
 }

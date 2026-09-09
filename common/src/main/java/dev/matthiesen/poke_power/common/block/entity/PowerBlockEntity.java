@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
+import dev.matthiesen.poke_power.common.block.PowerBlock;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyGenerator;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
@@ -27,38 +28,45 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
-public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements GeoBlockEntity {
-    private static final RawAnimation IDLE_ANIM = RawAnimation.begin()
-            .thenLoop("animation.power_block.idle");
-    // Plays activate once, then loops active — setAndContinue won't restart mid-play
-    private static final RawAnimation ACTIVATE_ANIM = RawAnimation.begin()
-            .thenPlay("animation.power_block.activate")
-            .thenLoop("animation.power_block.active");
-
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
     private final PokeEnergyGenerator generator;
 
     public PowerBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(BlockEntityRegistry.POWER_BLOCK_BE.get(), blockPos, blockState);
-        generator = new PokeEnergyGenerator();
+        this.generator = new PokeEnergyGenerator();
     }
 
     private boolean isActive = false;
     private List<StoredPokemon> storedPokemon = new ArrayList<>();
     private ItemStack chargingItem = ItemStack.EMPTY;
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    private BlockState fakeBlockState;
+
+    public BlockState getFakeBlockState() {
+        if (fakeBlockState == null) {
+            fakeBlockState = getBlockState().setValue(PowerBlock.ACTIVE_MODEL, true);
+        }
+        return fakeBlockState;
+    }
+
+    public float getRenderScale() {
+        var storage = getEnergyStorage();
+        if (storage == null) return 0.25f;
+
+        long energy = storage.getEnergy();
+        long capacity = storage.getCapacity();
+        if (capacity <= 0) return 0.25f;
+
+        float chargeRatio = Math.clamp(energy / (float) capacity, 0.0f, 1.0f);
+        return 0.25f + (chargeRatio * 0.75f);
+    }
 
     public int getStoredPokemonCount() {
         return storedPokemon.size();
@@ -147,17 +155,6 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
     }
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, state ->
-                state.setAndContinue(this.isActive ? ACTIVATE_ANIM : IDLE_ANIM)));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
-    }
-
-    @Override
     public AbstractCommonEnergyStorage getEnergyStorage() {
         return generator;
     }
@@ -237,7 +234,12 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity implements
         }
         powerBlock.chargeItemInSlot();
         powerBlock.generator.distributeEnergy(level, blockPos);
+        powerBlock.syncToClient(level, blockPos, blockState);
+    }
+
+    private void syncToClient(Level level, BlockPos blockPos, BlockState blockState) {
         setChanged(level, blockPos, blockState);
+        level.sendBlockUpdated(blockPos, blockState, blockState, Block.UPDATE_CLIENTS);
     }
 
     private void chargeItemInSlot() {
