@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class PowerBlock extends Block implements EntityBlock {
-    private static final BooleanProperty ACTIVE_SPIN_MODEL = BooleanProperty.create("activespinnermodel");
+    public static final BooleanProperty ACTIVE_MODEL = BooleanProperty.create("activemodel");
 
     public PowerBlock() {
         super(
@@ -36,13 +36,13 @@ public final class PowerBlock extends Block implements EntityBlock {
         );
         this.registerDefaultState(
                 this.stateDefinition.any()
-                        .setValue(ACTIVE_SPIN_MODEL, false)
+                        .setValue(ACTIVE_MODEL, false)
         );
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE_SPIN_MODEL);
+        builder.add(ACTIVE_MODEL);
     }
 
     private static final int MAX_POKEMON_STORAGE = 6;

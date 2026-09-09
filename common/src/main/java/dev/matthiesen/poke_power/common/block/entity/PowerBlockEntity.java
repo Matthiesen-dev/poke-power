@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
+import dev.matthiesen.poke_power.common.block.PowerBlock;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyGenerator;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
@@ -41,6 +42,31 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
     private boolean isActive = false;
     private List<StoredPokemon> storedPokemon = new ArrayList<>();
     private ItemStack chargingItem = ItemStack.EMPTY;
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    private BlockState fakeBlockState;
+
+    public BlockState getFakeBlockState() {
+        if (fakeBlockState == null) {
+            fakeBlockState = getBlockState().setValue(PowerBlock.ACTIVE_MODEL, true);
+        }
+        return fakeBlockState;
+    }
+
+    public float getRenderScale() {
+        var storage = getEnergyStorage();
+        if (storage == null) return 0.25f;
+
+        long energy = storage.getEnergy();
+        long capacity = storage.getCapacity();
+        if (capacity <= 0) return 0.25f;
+
+        float chargeRatio = Math.clamp(energy / (float) capacity, 0.0f, 1.0f);
+        return 0.25f + (chargeRatio * 0.75f);
+    }
 
     public int getStoredPokemonCount() {
         return storedPokemon.size();
@@ -208,7 +234,12 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
         }
         powerBlock.chargeItemInSlot();
         powerBlock.generator.distributeEnergy(level, blockPos);
+        powerBlock.syncToClient(level, blockPos, blockState);
+    }
+
+    private void syncToClient(Level level, BlockPos blockPos, BlockState blockState) {
         setChanged(level, blockPos, blockState);
+        level.sendBlockUpdated(blockPos, blockState, blockState, Block.UPDATE_CLIENTS);
     }
 
     private void chargeItemInSlot() {
