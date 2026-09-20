@@ -5,6 +5,7 @@ import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntit
 import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyHelpers;
 import dev.matthiesen.matthiesen_core.neoforge.api.energy.NeoForgeEnergyWrapper;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
+import dev.matthiesen.poke_power.neoforge.PokePowerNeoForge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -13,7 +14,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.function.Supplier;
 
@@ -22,7 +22,7 @@ public final class PowerToolsNeoForge implements PowerTools {
 
     @Override
     public void registerBlockEntityEnergyCapability(Supplier<BlockEntityType<?>> supplier) {
-        NeoForge.EVENT_BUS.addListener((RegisterCapabilitiesEvent event) -> event.registerBlockEntity(
+        PokePowerNeoForge.modBus.addListener((RegisterCapabilitiesEvent event) -> event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
                 supplier.get(),
                 (blockEntity, side) -> {
