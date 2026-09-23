@@ -6,6 +6,7 @@ import dev.matthiesen.matthiesen_core.common.api.platform.loader.ModConfigType;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
 import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
 import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
+import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import dev.matthiesen.poke_power.common.registry.BlockRegistry;
@@ -53,10 +54,13 @@ public final class PokePowerCommon extends AbstractCommonMod {
         CreativeModeTabRegistry.init();
         MenuRegistry.init();
 
-        // Register server-bound (C2S) packets
         var net = INSTANCE.getNetworkingManager();
+
+        // Register server-bound (C2S) packets
         net.registerC2S(InsertPokemonPayload.TYPE, InsertPokemonPayload.CODEC, InsertPokemonPayload::handle);
         net.registerC2S(RemovePokemonPayload.TYPE, RemovePokemonPayload.CODEC, RemovePokemonPayload::handle);
+        // Register the client-bound (S2C) sync packet handler
+        net.registerS2C(SyncGeneratorPayload.TYPE, SyncGeneratorPayload.CODEC, SyncGeneratorPayload::handleClient);
 
         createInfoLog("Initialized");
     }
