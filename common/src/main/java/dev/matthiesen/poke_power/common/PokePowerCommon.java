@@ -1,18 +1,12 @@
 package dev.matthiesen.poke_power.common;
 
-import dev.matthiesen.libs.faststats.Token;
+import dev.faststats.Token;
 import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
 import dev.matthiesen.matthiesen_core.common.api.platform.loader.ModConfigType;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
-import dev.matthiesen.poke_power.common.network.InsertPokemonPayload;
-import dev.matthiesen.poke_power.common.network.RemovePokemonPayload;
-import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
+import dev.matthiesen.poke_power.common.network.*;
 import dev.matthiesen.poke_power.common.platform.PowerTools;
-import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
-import dev.matthiesen.poke_power.common.registry.BlockRegistry;
-import dev.matthiesen.poke_power.common.registry.CreativeModeTabRegistry;
-import dev.matthiesen.poke_power.common.registry.ItemRegistry;
-import dev.matthiesen.poke_power.common.registry.MenuRegistry;
+import dev.matthiesen.poke_power.common.registry.*;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
