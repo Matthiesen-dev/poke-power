@@ -33,7 +33,7 @@ public enum PowerBlockJadeProvider implements IBlockComponentProvider, IServerDa
         var registryAccess = blockAccessor.getLevel().registryAccess();
 
         if (serverData.getBoolean(HAS_POKEMON)) {
-            iTooltip.add(Component.literal("Contained Pokemon:").withStyle(ChatFormatting.GRAY));
+            iTooltip.add(Component.translatable("tooltip.poke_power.pokemon.power-gen.jade.contained").withStyle(ChatFormatting.GRAY));
         }
 
         int index = 0;

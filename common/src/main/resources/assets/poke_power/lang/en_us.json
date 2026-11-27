@@ -5,6 +5,7 @@
   "container.poke_power.generator_slots": "Generator",
   "container.poke_power.party_slots": "Party",
   "container.poke_power.current_generation": "Current Generation: %s FE/t",
+  "container.poke_power.power_block.menu.busy": "You cannot open the Power Block menu while in battle or when your party is busy.",
   "config.jade.plugin_poke_power.power_block": "Power Block",
   "tooltip.poke_power.energy_bar.title": "Energy Storage",
   "tooltip.poke_power.energy_bar.capacity": "Capacity: ",
@@ -18,6 +19,7 @@
   "tooltip.poke_power.pokemon.power-gen.not-allowed": "This Pokemon cannot generate power.",
   "tooltip.poke_power.pokemon.power-gen.jade": "Total Generation: ",
   "tooltip.poke_power.pokemon.power-gen.jade.pokemon": " (%s FE/t)",
+  "tooltip.poke_power.pokemon.power-gen.jade.contained": "Contained Pokemon:",
 
   "poke_power.configuration.title": "Poke Power Configuration",
   "poke_power.configuration.section.poke.power.server.toml": "Server Config",
