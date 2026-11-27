@@ -33,6 +33,7 @@ public final class PowerBlock extends Block implements EntityBlock {
                         .noOcclusion()
                         .strength(4f)
                         .requiresCorrectToolForDrops()
+                        .lightLevel((state) -> state.getValue(ACTIVE_MODEL) ? 10 : 0)
         );
         this.registerDefaultState(
                 this.stateDefinition.any()
