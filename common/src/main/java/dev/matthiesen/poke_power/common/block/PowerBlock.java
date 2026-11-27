@@ -1,5 +1,6 @@
 package dev.matthiesen.poke_power.common.block;
 
+import com.cobblemon.mod.common.util.PlayerExtensionsKt;
 import dev.matthiesen.matthiesen_core.common.utility.ui.menu.MenuProvider;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
@@ -62,6 +63,12 @@ public final class PowerBlock extends Block implements EntityBlock {
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             if (level.getBlockEntity(pos) instanceof PowerBlockEntity entity) {
+
+                if (PlayerExtensionsKt.isInBattle(serverPlayer) || PlayerExtensionsKt.isPartyBusy(serverPlayer)) {
+                    serverPlayer.displayClientMessage(Component.translatable("container.poke_power.power_block.menu.busy"), true);
+                    return InteractionResult.FAIL;
+                }
+
                 MenuProvider.openMenu(serverPlayer,
                         MenuProvider.createProvider(
                                 (containerId, inv, p) -> new PowerBlockMenu(containerId, inv, pos, entity),

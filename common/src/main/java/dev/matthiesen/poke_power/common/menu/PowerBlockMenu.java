@@ -3,18 +3,19 @@ package dev.matthiesen.poke_power.common.menu;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.PowerBlockEntity;
+import dev.matthiesen.poke_power.common.menu.container.ChargingContainer;
+import dev.matthiesen.poke_power.common.menu.container.data.ChargingContainerData;
+import dev.matthiesen.poke_power.common.menu.slot.ChargingSlot;
+import dev.matthiesen.poke_power.common.menu.slot.DisplaySlot;
 import dev.matthiesen.poke_power.common.registry.MenuRegistry;
 import dev.matthiesen.poke_power.common.util.PokeUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -23,6 +24,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+/**
+ * The menu for the Power Block, which allows players to view stored Pokémon, their party, and charge items.
+ * This class handles the server-client synchronization of the menu state and manages the slots for display and interaction.
+ */
 public final class PowerBlockMenu extends AbstractContainerMenu {
 
     // Slot index ranges exposed to the screen for click handling
@@ -51,144 +56,33 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     public static final int CHARGING_SLOT_X = 128;
     public static final int CHARGING_SLOT_Y = 40;
 
-    /**
-     * ContainerData indices for energy syncing.
-     * ContainerData values are synced as 16-bit shorts, so values above 32767 get
-     * corrupted. Energy and capacity can reach 120,000+, so each is split across
-     * two slots: low 16 bits and high 16 bits.
-     */
-    private static final int DATA_ENERGY_LO   = 0;
-    private static final int DATA_ENERGY_HI   = 1;
-    private static final int DATA_CAPACITY_LO = 2;
-    private static final int DATA_CAPACITY_HI = 3;
-    private static final int DATA_GEN_LO      = 4;
-    private static final int DATA_GEN_HI      = 5;
-    private static final int DATA_COUNT       = 6;
-
     private final SimpleContainer genContainer   = new SimpleContainer(GEN_SLOT_COUNT);
     private final SimpleContainer partyContainer = new SimpleContainer(PARTY_SLOT_COUNT);
-    @Nullable private PowerBlockEntity blockEntity;
-    private ItemStack clientChargingItem = ItemStack.EMPTY;
-    private final Container chargingContainer = new Container() {
-        @Override
-        public int getContainerSize() {
-            return 1;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return getItem(0).isEmpty();
-        }
-
-        @Override
-        public @NotNull ItemStack getItem(int index) {
-            if (index != 0) return ItemStack.EMPTY;
-            return blockEntity != null ? blockEntity.getChargingItem() : clientChargingItem;
-        }
-
-        @Override
-        public @NotNull ItemStack removeItem(int index, int count) {
-            if (index != 0 || count <= 0) return ItemStack.EMPTY;
-            ItemStack stack = getItem(0);
-            if (stack.isEmpty()) return ItemStack.EMPTY;
-            ItemStack removed = stack.split(count);
-            setItem(0, stack.isEmpty() ? ItemStack.EMPTY : stack);
-            return removed;
-        }
-
-        @Override
-        public @NotNull ItemStack removeItemNoUpdate(int index) {
-            if (index != 0) return ItemStack.EMPTY;
-            ItemStack stack = getItem(0);
-            setItem(0, ItemStack.EMPTY);
-            return stack;
-        }
-
-        @Override
-        public void setItem(int index, @NotNull ItemStack stack) {
-            if (index != 0) return;
-            if (blockEntity != null) {
-                blockEntity.setChargingItem(stack);
-            } else {
-                clientChargingItem = stack;
-            }
-            setChanged();
-        }
-
-        @Override
-        public void setChanged() {
-            if (blockEntity != null) {
-                blockEntity.setChanged();
-            }
-        }
-
-        @Override
-        public boolean stillValid(@NotNull Player player) {
-            return true;
-        }
-
-        @Override
-        public void clearContent() {
-            setItem(0, ItemStack.EMPTY);
-        }
-    };
 
     @Nullable private BlockPos blockPos;
     @Nullable private Level level;
-
-    /**
-     * ContainerData that reads live from the block entity on the server side
-     * and is automatically broadcast to the client every tick via broadcastChanges().
-     * On the client, MC calls set() to update the cached values below.
-     */
+    @Nullable private PowerBlockEntity blockEntity;
+    private ItemStack clientChargingItem = ItemStack.EMPTY;
     private long cachedEnergy   = 0;
     private long cachedCapacity = 0;
     private long cachedGeneration = 0;
 
-    private final ContainerData energyData = new ContainerData() {
-        @Override
-        public int get(int index) {
-            // Server: read live from entity so broadcastChanges() detects changes each tick.
-            // Client: return cached values written by set().
-            long energy   = cachedEnergy;
-            long capacity = cachedCapacity;
-            long generation = cachedGeneration;
-            if (level != null && !level.isClientSide() && blockPos != null) {
-                if (level.getBlockEntity(blockPos) instanceof PowerBlockEntity entity) {
-                    energy   = entity.getEnergyStorage().getEnergy();
-                    capacity = entity.getEnergyStorage().getCapacity();
-                    generation = entity.getActiveGenerationValue();
-                }
-            }
-            return switch (index) {
-                case DATA_ENERGY_LO   -> (int) (energy   & 0xFFFFL);
-                case DATA_ENERGY_HI   -> (int) (energy   >> 16);
-                case DATA_CAPACITY_LO -> (int) (capacity & 0xFFFFL);
-                case DATA_CAPACITY_HI -> (int) (capacity >> 16);
-                case DATA_GEN_LO      -> (int) (generation & 0xFFFFL);
-                case DATA_GEN_HI      -> (int) (generation >> 16);
-                default -> 0;
-            };
-        }
+    private final ChargingContainer chargingContainer = new ChargingContainer(
+            () -> blockEntity,
+            () -> clientChargingItem,
+            (stack) -> clientChargingItem = stack
+    );
 
-        @Override
-        public void set(int index, int value) {
-            // Client-side: MC calls this when the server sends an update.
-            // Each value arrives as a signed short; mask to 16 bits before reassembling.
-            int bits = value & 0xFFFF;
-            switch (index) {
-                case DATA_ENERGY_LO   -> cachedEnergy   = (cachedEnergy   & 0xFFFF0000L) | bits;
-                case DATA_ENERGY_HI   -> cachedEnergy   = (cachedEnergy   & 0x0000FFFFL) | ((long) bits << 16);
-                case DATA_CAPACITY_LO -> cachedCapacity = (cachedCapacity & 0xFFFF0000L) | bits;
-                case DATA_CAPACITY_HI -> cachedCapacity = (cachedCapacity & 0x0000FFFFL) | ((long) bits << 16);
-                case DATA_GEN_LO      -> cachedGeneration = (cachedGeneration & 0xFFFF0000L) | bits;
-                case DATA_GEN_HI      -> cachedGeneration = (cachedGeneration & 0x0000FFFFL) | ((long) bits << 16);
-            }
-        }
-
-        @Override
-        public int getCount() { return DATA_COUNT; }
-    };
+    private final ChargingContainerData energyData = new ChargingContainerData(
+        () -> cachedEnergy,
+        () -> cachedCapacity,
+        () -> cachedGeneration,
+        (value) -> cachedEnergy = value,
+        (value) -> cachedCapacity = value,
+        (value) -> cachedGeneration = value,
+        () -> level,
+        () -> blockPos
+    );
 
     /** Returns the client-side cached energy (valid on both sides after sync). */
     public long getSyncedEnergy()   { return cachedEnergy; }
@@ -200,11 +94,7 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     /** Client-side constructor — registered in {@link MenuRegistry}. */
     public PowerBlockMenu(int containerId, Inventory inv) {
         super(MenuRegistry.POWER_GENERATOR_MENU.get(), containerId);
-        addGenSlots();
-        addPartySlots();
-        addChargingSlot();
-        addPlayerInventorySlots(inv);
-        addDataSlots(energyData);
+        setupSlots(inv);
     }
 
     /** Server-side constructor — used when opening the menu for a player. */
@@ -213,11 +103,7 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
         this.blockPos = pos;
         this.level = entity.getLevel();
         this.blockEntity = entity;
-        addGenSlots();
-        addPartySlots();
-        addChargingSlot();
-        addPlayerInventorySlots(inv);
-        addDataSlots(energyData);
+        setupSlots(inv);
 
         // Populate generator slots from the entity
         List<Pokemon> stored = entity.getStoredPokemon();
@@ -290,6 +176,14 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
 
     // ── slot helpers ────────────────────────────────────────────────────────
 
+    private void setupSlots(Inventory inv) {
+        addGenSlots();
+        addPartySlots();
+        addChargingSlot();
+        addPlayerInventorySlots(inv);
+        addDataSlots(energyData);
+    }
+
     private void addGenSlots() {
         for (int i = 0; i < GEN_SLOT_COUNT; i++) {
             addSlot(new DisplaySlot(genContainer, i, GEN_SLOT_X0 + i * 18, GEN_SLOT_Y));
@@ -314,35 +208,6 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
         }
         for (int col = 0; col < 9; col++) {
             addSlot(new Slot(inv, col, PLAYER_INV_X0 + col * 18, HOTBAR_Y));
-        }
-    }
-
-    /**
-     * A read-only slot used for displaying Pokémon icons.
-     * All item movement is blocked; clicks are handled by the screen via C2S packets.
-     */
-    private static class DisplaySlot extends Slot {
-        DisplaySlot(SimpleContainer container, int index, int x, int y) {
-            super(container, index, x, y);
-        }
-
-        @Override public boolean mayPlace(ItemStack stack)  { return false; }
-        @Override public boolean mayPickup(Player player)   { return false; }
-    }
-
-    private static class ChargingSlot extends Slot {
-        ChargingSlot(Container container, int index, int x, int y) {
-            super(container, index, x, y);
-        }
-
-        @Override
-        public boolean mayPlace(@NotNull ItemStack stack) {
-            return PokePowerCommon.POWER_TOOLS.canChargeItem(stack);
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            return 1;
         }
     }
 }
