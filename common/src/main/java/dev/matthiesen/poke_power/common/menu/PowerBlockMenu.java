@@ -29,12 +29,13 @@ import java.util.List;
  * This class handles the server-client synchronization of the menu state and manages the slots for display and interaction.
  */
 public final class PowerBlockMenu extends AbstractContainerMenu {
+    public static final int BASE_SLOT_COUNT = 6; // Number of generator and party slots each
 
     // Slot index ranges exposed to the screen for click handling
     public static final int GEN_SLOT_START = 0;
-    public static final int GEN_SLOT_COUNT = 6;
-    public static final int PARTY_SLOT_START = 6;
-    public static final int PARTY_SLOT_COUNT = 6;
+    public static final int GEN_SLOT_COUNT = BASE_SLOT_COUNT;
+    public static final int PARTY_SLOT_START = BASE_SLOT_COUNT;
+    public static final int PARTY_SLOT_COUNT = BASE_SLOT_COUNT;
     public static final int CHARGING_SLOT_START = 12;
     public static final int CHARGING_SLOT_COUNT = 1;
 
@@ -63,9 +64,6 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     @Nullable private Level level;
     @Nullable private PowerBlockEntity blockEntity;
     private ItemStack clientChargingItem = ItemStack.EMPTY;
-    private long cachedEnergy   = 0;
-    private long cachedCapacity = 0;
-    private long cachedGeneration = 0;
 
     private final ChargingContainer chargingContainer = new ChargingContainer(
             () -> blockEntity,
@@ -74,22 +72,16 @@ public final class PowerBlockMenu extends AbstractContainerMenu {
     );
 
     private final ChargingContainerData energyData = new ChargingContainerData(
-        () -> cachedEnergy,
-        () -> cachedCapacity,
-        () -> cachedGeneration,
-        (value) -> cachedEnergy = value,
-        (value) -> cachedCapacity = value,
-        (value) -> cachedGeneration = value,
         () -> level,
         () -> blockPos
     );
 
     /** Returns the client-side cached energy (valid on both sides after sync). */
-    public long getSyncedEnergy()   { return cachedEnergy; }
+    public long getSyncedEnergy()   { return energyData.getCachedEnergy(); }
     /** Returns the client-side cached capacity (valid on both sides after sync). */
-    public long getSyncedCapacity() { return cachedCapacity; }
+    public long getSyncedCapacity() { return energyData.getCachedCapacity(); }
     /** Returns the client-side cached active generation rate (FE/t). */
-    public long getSyncedGeneration() { return cachedGeneration; }
+    public long getSyncedGeneration() { return energyData.getCachedGen(); }
 
     /** Client-side constructor — registered in {@link MenuRegistry}. */
     public PowerBlockMenu(int containerId, Inventory inv) {

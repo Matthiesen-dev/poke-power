@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -21,35 +20,38 @@ public final class ChargingContainerData implements ContainerData {
     private static final int DATA_GEN_HI      = 5;
     private static final int DATA_COUNT       = 6;
 
-    // Getters for cached values
-    private final Supplier<Long> getCachedEnergy;
-    private final Supplier<Long> getCachedCapacity;
-    private final Supplier<Long> getCachedGen;
+    private long cachedEnergy   = 0L;
+    private long cachedCapacity = 0L;
+    private long cachedGen      = 0L;
 
-    // Setters for cached values
-    private final Consumer<Long> setCachedEnergy;
-    private final Consumer<Long> setCachedCapacity;
-    private final Consumer<Long> setCachedGen;
+    // Getters for cached values
+    public long getCachedEnergy() {
+        return cachedEnergy;
+    }
+    public long getCachedCapacity() {
+        return cachedCapacity;
+    }
+    public long getCachedGen() {
+        return cachedGen;
+    }
+
+    private void setCachedEnergy(long value) {
+        cachedEnergy = value;
+    }
+    private void setCachedCapacity(long value) {
+        cachedCapacity = value;
+    }
+    private void setCachedGen(long value) {
+        cachedGen = value;
+    }
 
     private final Supplier<Level> level;
     private final Supplier<BlockPos> blockPos;
 
     public ChargingContainerData(
-        Supplier<Long> getCachedEnergy,
-        Supplier<Long> getCachedCapacity,
-        Supplier<Long> getCachedGen,
-        Consumer<Long> setCachedEnergy,
-        Consumer<Long> setCachedCapacity,
-        Consumer<Long> setCachedGen,
         Supplier<Level> level,
         Supplier<BlockPos> blockPos
     ) {
-        this.getCachedEnergy = getCachedEnergy;
-        this.getCachedCapacity = getCachedCapacity;
-        this.getCachedGen = getCachedGen;
-        this.setCachedEnergy = setCachedEnergy;
-        this.setCachedCapacity = setCachedCapacity;
-        this.setCachedGen = setCachedGen;
         this.level = level;
         this.blockPos = blockPos;
     }
@@ -64,9 +66,9 @@ public final class ChargingContainerData implements ContainerData {
     public int get(int index) {
         // Server: read live from entity so broadcastChanges() detects changes each tick.
         // Client: return cached values written by set().
-        long energy = getCachedEnergy.get();
-        long capacity = getCachedCapacity.get();
-        long generation = getCachedGen.get();
+        long energy = getCachedEnergy();
+        long capacity = getCachedCapacity();
+        long generation = getCachedGen();
 
         Level lvl = level.get();
         BlockPos pos = blockPos.get();
@@ -102,12 +104,12 @@ public final class ChargingContainerData implements ContainerData {
         int bits = value & 0xFFFF;
 
         switch (index) {
-            case DATA_ENERGY_LO   -> setCachedEnergy.accept((getCachedEnergy.get() & 0xFFFF0000L) | bits);
-            case DATA_ENERGY_HI   -> setCachedEnergy.accept((getCachedEnergy.get() & 0x0000FFFFL) | ((long) bits << 16));
-            case DATA_CAPACITY_LO -> setCachedCapacity.accept((getCachedCapacity.get() & 0xFFFF0000L) | bits);
-            case DATA_CAPACITY_HI -> setCachedCapacity.accept((getCachedCapacity.get() & 0x0000FFFFL) | ((long) bits << 16));
-            case DATA_GEN_LO      -> setCachedGen.accept((getCachedGen.get() & 0xFFFF0000L) | bits);
-            case DATA_GEN_HI      -> setCachedGen.accept((getCachedGen.get() & 0x0000FFFFL) | ((long) bits << 16));
+            case DATA_ENERGY_LO   -> setCachedEnergy((getCachedEnergy() & 0xFFFF0000L) | bits);
+            case DATA_ENERGY_HI   -> setCachedEnergy((getCachedEnergy() & 0x0000FFFFL) | ((long) bits << 16));
+            case DATA_CAPACITY_LO -> setCachedCapacity((getCachedCapacity() & 0xFFFF0000L) | bits);
+            case DATA_CAPACITY_HI -> setCachedCapacity((getCachedCapacity() & 0x0000FFFFL) | ((long) bits << 16));
+            case DATA_GEN_LO      -> setCachedGen((getCachedGen() & 0xFFFF0000L) | bits);
+            case DATA_GEN_HI      -> setCachedGen((getCachedGen() & 0x0000FFFFL) | ((long) bits << 16));
         }
     }
 

@@ -2,6 +2,7 @@ package dev.matthiesen.poke_power.common.block;
 
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.entity.CableBlockEntity;
+import dev.matthiesen.poke_power.common.defs.CableConnectionType;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -32,12 +32,12 @@ import org.jetbrains.annotations.Nullable;
 
 public final class CableBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    private static final EnumProperty<ConnectionType> NORTH = EnumProperty.create("north", ConnectionType.class);
-    private static final EnumProperty<ConnectionType> SOUTH = EnumProperty.create("south", ConnectionType.class);
-    private static final EnumProperty<ConnectionType> EAST = EnumProperty.create("east", ConnectionType.class);
-    private static final EnumProperty<ConnectionType> WEST = EnumProperty.create("west", ConnectionType.class);
-    private static final EnumProperty<ConnectionType> UP = EnumProperty.create("up", ConnectionType.class);
-    private static final EnumProperty<ConnectionType> DOWN = EnumProperty.create("down", ConnectionType.class);
+    private static final EnumProperty<CableConnectionType> NORTH = EnumProperty.create("north", CableConnectionType.class);
+    private static final EnumProperty<CableConnectionType> SOUTH = EnumProperty.create("south", CableConnectionType.class);
+    private static final EnumProperty<CableConnectionType> EAST = EnumProperty.create("east", CableConnectionType.class);
+    private static final EnumProperty<CableConnectionType> WEST = EnumProperty.create("west", CableConnectionType.class);
+    private static final EnumProperty<CableConnectionType> UP = EnumProperty.create("up", CableConnectionType.class);
+    private static final EnumProperty<CableConnectionType> DOWN = EnumProperty.create("down", CableConnectionType.class);
 
     private static final VoxelShape CORE_SHAPE = Block.box(6, 6, 6, 10, 10, 10);
     private static final VoxelShape NORTH_SHAPE = Block.box(6, 6, 0, 10, 10, 6);
@@ -57,12 +57,12 @@ public final class CableBlock extends Block implements EntityBlock, SimpleWaterl
         // Default state is a floating pipe center with no arms connected
         this.registerDefaultState(
                 this.stateDefinition.any()
-                .setValue(NORTH, ConnectionType.NONE)
-                .setValue(SOUTH, ConnectionType.NONE)
-                .setValue(EAST, ConnectionType.NONE)
-                .setValue(WEST, ConnectionType.NONE)
-                .setValue(UP, ConnectionType.NONE)
-                .setValue(DOWN, ConnectionType.NONE)
+                .setValue(NORTH, CableConnectionType.NONE)
+                .setValue(SOUTH, CableConnectionType.NONE)
+                .setValue(EAST, CableConnectionType.NONE)
+                .setValue(WEST, CableConnectionType.NONE)
+                .setValue(UP, CableConnectionType.NONE)
+                .setValue(DOWN, CableConnectionType.NONE)
                 .setValue(WATERLOGGED, false)
         );
     }
@@ -78,12 +78,12 @@ public final class CableBlock extends Block implements EntityBlock, SimpleWaterl
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
-        ConnectionType northType = getConnectionType(level, pos, Direction.NORTH);
-        ConnectionType southType = getConnectionType(level, pos, Direction.SOUTH);
-        ConnectionType eastType = getConnectionType(level, pos, Direction.EAST);
-        ConnectionType westType = getConnectionType(level, pos, Direction.WEST);
-        ConnectionType upType = getConnectionType(level, pos, Direction.UP);
-        ConnectionType downType = getConnectionType(level, pos, Direction.DOWN);
+        CableConnectionType northType = getConnectionType(level, pos, Direction.NORTH);
+        CableConnectionType southType = getConnectionType(level, pos, Direction.SOUTH);
+        CableConnectionType eastType = getConnectionType(level, pos, Direction.EAST);
+        CableConnectionType westType = getConnectionType(level, pos, Direction.WEST);
+        CableConnectionType upType = getConnectionType(level, pos, Direction.UP);
+        CableConnectionType downType = getConnectionType(level, pos, Direction.DOWN);
         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
 
         return this.defaultBlockState()
@@ -110,30 +110,30 @@ public final class CableBlock extends Block implements EntityBlock, SimpleWaterl
         return state.setValue(getPropertyForDirection(direction), getConnectionType(level, currentPos, direction));
     }
 
-    private ConnectionType getConnectionType(LevelAccessor level, BlockPos currentPos, Direction direction) {
+    private CableConnectionType getConnectionType(LevelAccessor level, BlockPos currentPos, Direction direction) {
         BlockPos targetPos = currentPos.relative(direction);
         BlockState targetState = level.getBlockState(targetPos);
 
         if (targetState.getBlock() instanceof CableBlock) {
-            return ConnectionType.CABLE;
+            return CableConnectionType.CABLE;
         }
 
         if (!(level instanceof Level currentLevel)) {
-            return ConnectionType.NONE;
+            return CableConnectionType.NONE;
         }
 
         if (PokePowerCommon.POWER_TOOLS.supportsEnergyTransfer(currentLevel, currentPos, direction)) {
-            return ConnectionType.MACHINE;
+            return CableConnectionType.MACHINE;
         }
 
-        return ConnectionType.NONE;
+        return CableConnectionType.NONE;
     }
 
-    private boolean isConnected(ConnectionType connectionType) {
-        return connectionType != ConnectionType.NONE;
+    private boolean isConnected(CableConnectionType connectionType) {
+        return connectionType != CableConnectionType.NONE;
     }
 
-    private EnumProperty<ConnectionType> getPropertyForDirection(Direction direction) {
+    private EnumProperty<CableConnectionType> getPropertyForDirection(Direction direction) {
         return switch (direction) {
             case NORTH -> NORTH;
             case SOUTH -> SOUTH;
@@ -154,23 +154,6 @@ public final class CableBlock extends Block implements EntityBlock, SimpleWaterl
         if (isConnected(state.getValue(UP))) shape = Shapes.or(shape, UP_SHAPE);
         if (isConnected(state.getValue(DOWN))) shape = Shapes.or(shape, DOWN_SHAPE);
         return shape;
-    }
-
-    private enum ConnectionType implements StringRepresentable {
-        NONE("none"),
-        CABLE("cable"),
-        MACHINE("machine");
-
-        private final String serializedName;
-
-        ConnectionType(String serializedName) {
-            this.serializedName = serializedName;
-        }
-
-        @Override
-        public @NotNull String getSerializedName() {
-            return serializedName;
-        }
     }
 
     @Override

@@ -2,20 +2,19 @@ package dev.matthiesen.poke_power.common.block.entity;
 
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
-import com.cobblemon.mod.common.pokemon.OriginalTrainerType;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractCommonEnergyStorage;
 import dev.matthiesen.matthiesen_core.common.api.energy.AbstractEnergyBlockEntity;
 import dev.matthiesen.poke_power.common.PokePowerCommon;
 import dev.matthiesen.poke_power.common.block.PowerBlock;
 import dev.matthiesen.poke_power.common.config.PokePowerConfig;
+import dev.matthiesen.poke_power.common.defs.StoredPokemon;
 import dev.matthiesen.poke_power.common.energy.PokeEnergyGenerator;
 import dev.matthiesen.poke_power.common.network.SyncGeneratorPayload;
 import dev.matthiesen.poke_power.common.registry.BlockEntityRegistry;
 import dev.matthiesen.poke_power.common.util.PokeUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
@@ -32,6 +31,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
+    private static final String NBT_KEY = "poke_power";
+    private static final String NBT_KEY_IS_ACTIVE = "isActive";
+    private static final String NBT_KEY_CHARGING_ITEM = "chargingItem";
+
     private final PokeEnergyGenerator generator;
 
     public PowerBlockEntity(BlockPos blockPos, BlockState blockState) {
@@ -162,47 +165,24 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
     @Override
     protected void loadAdditional(CompoundTag compoundTag, HolderLookup.Provider provider) {
         super.loadAdditional(compoundTag, provider);
-        CompoundTag nbt = compoundTag.getCompound("poke_power");
-        this.isActive = nbt.getBoolean("isActive");
-        this.chargingItem = nbt.contains("chargingItem", Tag.TAG_COMPOUND)
-                ? ItemStack.parseOptional(provider, nbt.getCompound("chargingItem"))
+        CompoundTag nbt = compoundTag.getCompound(NBT_KEY);
+        this.isActive = nbt.getBoolean(NBT_KEY_IS_ACTIVE);
+        this.chargingItem = nbt.contains(NBT_KEY_CHARGING_ITEM, Tag.TAG_COMPOUND)
+                ? ItemStack.parseOptional(provider, nbt.getCompound(NBT_KEY_CHARGING_ITEM))
                 : ItemStack.EMPTY;
-        CompoundTag pokemonList = nbt.getCompound("storedPokemon");
-        List<StoredPokemon> loadedStoredPokemon = new ArrayList<>();
-        List<String> keys = new ArrayList<>(pokemonList.getAllKeys());
-        keys.sort(Comparator.comparingInt(PowerBlockEntity::storedPokemonIndex));
-        for (String key : keys) {
-            CompoundTag entryTag = pokemonList.getCompound(key);
-            CompoundTag pokemonTag = entryTag.contains("pokemon") ? entryTag.getCompound("pokemon") : entryTag;
-            Pokemon pokemon = new Pokemon();
-            pokemon.loadFromNBT((RegistryAccess) provider, pokemonTag);
-            UUID ownerUuid = entryTag.hasUUID("owner") ? entryTag.getUUID("owner") : getOwnerUuid(pokemon);
-            loadedStoredPokemon.add(new StoredPokemon(pokemon, ownerUuid));
-        }
-        this.storedPokemon = loadedStoredPokemon;
+        this.storedPokemon = StoredPokemon.listFromNBT(nbt, provider);
     }
 
     @Override
     protected void saveAdditional(CompoundTag compoundTag, HolderLookup.Provider provider) {
         super.saveAdditional(compoundTag, provider);
         CompoundTag nbt = new CompoundTag();
-        nbt.putBoolean("isActive", this.isActive);
+        nbt.putBoolean(NBT_KEY_IS_ACTIVE, this.isActive);
         if (!chargingItem.isEmpty()) {
-            nbt.put("chargingItem", chargingItem.save(provider));
+            nbt.put(NBT_KEY_CHARGING_ITEM, chargingItem.save(provider));
         }
-        CompoundTag pokemonList = new CompoundTag();
-        for (int i = 0; i < storedPokemon.size(); i++) {
-            StoredPokemon stored = storedPokemon.get(i);
-            CompoundTag entryTag = new CompoundTag();
-            CompoundTag pokemonTag = stored.pokemon().saveToNBT((RegistryAccess) provider, new CompoundTag());
-            entryTag.put("pokemon", pokemonTag);
-            if (stored.ownerUuid() != null) {
-                entryTag.putUUID("owner", stored.ownerUuid());
-            }
-            pokemonList.put("pokemon_" + i, entryTag);
-        }
-        nbt.put("storedPokemon", pokemonList);
-        compoundTag.put("poke_power", nbt);
+        StoredPokemon.saveToNBT(storedPokemon, nbt, provider);
+        compoundTag.put(NBT_KEY, nbt);
     }
 
     @Override
@@ -261,38 +241,5 @@ public final class PowerBlockEntity extends AbstractEnergyBlockEntity {
         if (level != null && !level.isClientSide) {
             level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
         }
-    }
-
-    private static int storedPokemonIndex(String key) {
-        if (key.startsWith("pokemon_")) {
-            try {
-                return Integer.parseInt(key.substring("pokemon_".length()));
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        return Integer.MAX_VALUE;
-    }
-
-    private static UUID getOwnerUuid(Pokemon pokemon) {
-        if (pokemon.getOwnerUUID() == null) {
-            return getOTUuid(pokemon);
-        }
-        try {
-            return pokemon.getOwnerUUID();
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
-    }
-
-    private static UUID getOTUuid(Pokemon pokemon) {
-        if (pokemon.getOriginalTrainerType() != OriginalTrainerType.PLAYER || pokemon.getOriginalTrainer() == null) return null;
-        try {
-            return UUID.fromString(pokemon.getOriginalTrainer());
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
-    }
-
-    private record StoredPokemon(Pokemon pokemon, UUID ownerUuid) {
     }
 }
